@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { StudyPlan } from "../types";
+import { appPath } from "../lib/app-path";
 import { Sparkles, Calendar, CheckCircle2, Clock, BookOpen, AlertCircle, Download, X, BookmarkCheck, ArrowRight } from "lucide-react";
 
 interface AIStudyPlanModalProps {
@@ -36,7 +37,7 @@ export function AIStudyPlanModal({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/ai/study-plan", {
+      const res = await fetch(appPath("/api/ai/study-plan"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

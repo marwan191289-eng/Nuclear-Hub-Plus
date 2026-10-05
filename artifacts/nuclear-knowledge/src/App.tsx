@@ -1,28 +1,142 @@
-import React, { useState, useEffect } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { ClickGlowLayer } from "./components/ClickGlowLayer";
 import { Navbar } from "./components/Navbar";
 import { HeroSection } from "./components/HeroSection";
-import { CoursesSection } from "./components/CoursesSection";
-import { ReactorSimulator } from "./components/ReactorSimulator";
-import { InstructorPage } from "./components/InstructorPage";
-import { StudentPortal } from "./components/StudentPortal";
-import { BookingAndMeetingRoom } from "./components/BookingAndMeetingRoom";
-import { AdminPanel } from "./components/AdminPanel";
-import { GamificationSection } from "./components/GamificationSection";
-import { PlacementQuizSection } from "./components/PlacementQuizSection";
-import { ChatAndResources } from "./components/ChatAndResources";
-import { ArticlesSection } from "./components/ArticlesSection";
 import { SupportWidget } from "./components/SupportWidget";
 import { Footer } from "./components/Footer";
 
-// Modals
-import { AIStudyPlanModal } from "./components/AIStudyPlanModal";
-import { SpacedRepetitionModal } from "./components/SpacedRepetitionModal";
-import { PaymentModal } from "./components/PaymentModal";
-import { NotificationsModal } from "./components/NotificationsModal";
+const CoursesSection = lazy(() =>
+  import("./components/CoursesSection").then((module) => ({ default: module.CoursesSection })),
+);
+const ReactorSimulator = lazy(() =>
+  import("./components/ReactorSimulator").then((module) => ({ default: module.ReactorSimulator })),
+);
+const InstructorPage = lazy(() =>
+  import("./components/InstructorPage").then((module) => ({ default: module.InstructorPage })),
+);
+const StudentPortal = lazy(() =>
+  import("./components/StudentPortal").then((module) => ({ default: module.StudentPortal })),
+);
+const BookingAndMeetingRoom = lazy(() =>
+  import("./components/BookingAndMeetingRoom").then((module) => ({ default: module.BookingAndMeetingRoom })),
+);
+const AdminPanel = lazy(() =>
+  import("./components/AdminPanel").then((module) => ({ default: module.AdminPanel })),
+);
+const GamificationSection = lazy(() =>
+  import("./components/GamificationSection").then((module) => ({ default: module.GamificationSection })),
+);
+const PlacementQuizSection = lazy(() =>
+  import("./components/PlacementQuizSection").then((module) => ({ default: module.PlacementQuizSection })),
+);
+const ChatAndResources = lazy(() =>
+  import("./components/ChatAndResources").then((module) => ({ default: module.ChatAndResources })),
+);
+const ArticlesSection = lazy(() =>
+  import("./components/ArticlesSection").then((module) => ({ default: module.ArticlesSection })),
+);
+const AIStudyPlanModal = lazy(() =>
+  import("./components/AIStudyPlanModal").then((module) => ({ default: module.AIStudyPlanModal })),
+);
+const SpacedRepetitionModal = lazy(() =>
+  import("./components/SpacedRepetitionModal").then((module) => ({ default: module.SpacedRepetitionModal })),
+);
+const PaymentModal = lazy(() =>
+  import("./components/PaymentModal").then((module) => ({ default: module.PaymentModal })),
+);
+const NotificationsModal = lazy(() =>
+  import("./components/NotificationsModal").then((module) => ({ default: module.NotificationsModal })),
+);
 
 import { INITIAL_COURSES } from "./data/coursesData";
 import { Course, Role, StudyPlan, UserProfile } from "./types";
+
+function SectionPlaceholder({ minHeight }: { minHeight: number }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="mx-auto w-full max-w-[1240px] px-6 py-10 lg:px-10"
+      style={{ minHeight }}
+    >
+      <div
+        className="animate-pulse rounded-2xl bg-[#e7ebe4]"
+        style={{ height: Math.min(minHeight, 220) }}
+      />
+    </div>
+  );
+}
+
+function DeferredSection({
+  children,
+  minHeight = 280,
+}: {
+  children: ReactNode;
+  minHeight?: number;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setShouldLoad(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "420px 0px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={containerRef} style={{ minHeight }}>
+      {shouldLoad ? (
+        <Suspense fallback={<SectionPlaceholder minHeight={minHeight} />}>
+          {children}
+        </Suspense>
+      ) : (
+        <SectionPlaceholder minHeight={minHeight} />
+      )}
+    </div>
+  );
+}
+
+function PageLoading({ language }: { language: "ar" | "en" }) {
+  return (
+    <div
+      className="mx-auto flex min-h-[48vh] max-w-[1240px] items-center justify-center gap-3 px-6 text-sm text-[#60736a]"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="size-7 animate-pulse rounded-full bg-[#dbe5dc]" />
+      <span>{language === "ar" ? "جارٍ تجهيز الصفحة…" : "Loading this page…"}</span>
+    </div>
+  );
+}
+
+function ModalLoading({ language }: { language: "ar" | "en" }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] grid place-items-center bg-[#1b302b]/20 p-4 backdrop-blur-sm"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="rounded-xl bg-[#fffefa] px-5 py-3 text-sm font-medium text-[#304c43] shadow-xl">
+        {language === "ar" ? "جارٍ فتح النافذة…" : "Opening…"}
+      </span>
+    </div>
+  );
+}
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<string>("home");
@@ -180,7 +294,7 @@ export default function App() {
           <>
             {/* 
               First Hero Section:
-              Replicates the exact colors, typography, layout, reactor core card, and realistic incremental 500+ counter from user image.
+              Keeps the main navigation, hero, and primary actions ready immediately.
             */}
             <HeroSection
               onStartJourney={() => setIsStudyPlanOpen(true)}
@@ -193,84 +307,107 @@ export default function App() {
               language={language}
             />
 
-            {/* Placement Diagnostic */}
-            <PlacementQuizSection
-              onOpenStudyPlan={() => setIsStudyPlanOpen(true)}
-              language={language}
-            />
+            <DeferredSection minHeight={340}>
+              <PlacementQuizSection
+                onOpenStudyPlan={() => setIsStudyPlanOpen(true)}
+                language={language}
+              />
+            </DeferredSection>
 
             {/* Courses Catalogue */}
-            <div id="courses-anchor">
+            <div id="courses-anchor" className="scroll-mt-24">
+              <DeferredSection minHeight={560}>
+                <CoursesSection
+                  courses={courses}
+                  onEnroll={handleEnrollInitiated}
+                  language={language}
+                />
+              </DeferredSection>
+            </div>
+
+            {/* Virtual Reactor Simulator */}
+            <div className="py-8 px-6 lg:px-10 max-w-[1240px] mx-auto">
+              <DeferredSection minHeight={520}>
+                <ReactorSimulator language={language} />
+              </DeferredSection>
+            </div>
+
+            {/* Gamification & Leaderboard */}
+            <DeferredSection minHeight={360}>
+              <GamificationSection
+                currentUser={currentUser}
+                language={language}
+              />
+            </DeferredSection>
+
+            {/* Q&A Chat & File Sharing */}
+            <DeferredSection minHeight={360}>
+              <ChatAndResources language={language} />
+            </DeferredSection>
+
+            {/* Educational Articles & Solved Problems */}
+            <DeferredSection minHeight={420}>
+              <ArticlesSection language={language} />
+            </DeferredSection>
+          </>
+        )}
+
+        {currentTab === "courses" && (
+          <Suspense fallback={<PageLoading language={language} />}>
+            <div className="py-6">
               <CoursesSection
                 courses={courses}
                 onEnroll={handleEnrollInitiated}
                 language={language}
               />
             </div>
-
-            {/* Virtual Reactor Simulator */}
-            <div className="py-8 px-6 lg:px-10 max-w-[1240px] mx-auto">
-              <ReactorSimulator language={language} />
-            </div>
-
-            {/* Gamification & Leaderboard */}
-            <GamificationSection
-              currentUser={currentUser}
-              language={language}
-            />
-
-            {/* Q&A Chat & File Sharing */}
-            <ChatAndResources language={language} />
-
-            {/* Educational Articles & Solved Problems */}
-            <ArticlesSection language={language} />
-          </>
-        )}
-
-        {currentTab === "courses" && (
-          <div className="py-6">
-            <CoursesSection
-              courses={courses}
-              onEnroll={handleEnrollInitiated}
-              language={language}
-            />
-          </div>
+          </Suspense>
         )}
 
         {currentTab === "simulator" && (
-          <div className="py-12 px-6 lg:px-10 max-w-[1240px] mx-auto">
-            <ReactorSimulator language={language} />
-          </div>
+          <Suspense fallback={<PageLoading language={language} />}>
+            <div className="py-12 px-6 lg:px-10 max-w-[1240px] mx-auto">
+              <ReactorSimulator language={language} />
+            </div>
+          </Suspense>
         )}
 
         {currentTab === "instructor" && (
-          <InstructorPage
-            onBookSession={() => setCurrentTab("booking")}
-            language={language}
-          />
+          <Suspense fallback={<PageLoading language={language} />}>
+            <InstructorPage
+              onBookSession={() => setCurrentTab("booking")}
+              language={language}
+            />
+          </Suspense>
         )}
 
         {currentTab === "portal" && (
-          <StudentPortal
-            currentUser={currentUser}
-            courses={courses}
-            completedLessonIds={completedLessonIds}
-            onCompleteLesson={handleLessonCompleted}
-            onOpenSpacedRepetition={() => setIsSpacedRepetitionOpen(true)}
-            language={language}
-          />
+          <Suspense fallback={<PageLoading language={language} />}>
+            <StudentPortal
+              currentUser={currentUser}
+              courses={courses}
+              completedLessonIds={completedLessonIds}
+              onCompleteLesson={handleLessonCompleted}
+              onOpenSpacedRepetition={() => setIsSpacedRepetitionOpen(true)}
+              language={language}
+            />
+          </Suspense>
         )}
 
         {currentTab === "booking" && (
-          <BookingAndMeetingRoom language={language} />
+          <Suspense fallback={<PageLoading language={language} />}>
+            <BookingAndMeetingRoom language={language} />
+          </Suspense>
         )}
 
         {currentTab === "admin" && (
-          <AdminPanel
-            currentUser={currentUser}
-            onRoleSwitch={handleRoleChange}
-            language={language}
-          />
+          <Suspense fallback={<PageLoading language={language} />}>
+            <AdminPanel
+              currentUser={currentUser}
+              onRoleSwitch={handleRoleChange}
+              language={language}
+            />
+          </Suspense>
         )}
       </main>
 
@@ -281,39 +418,55 @@ export default function App() {
       <Footer onTabChange={setCurrentTab} language={language} />
 
       {/* Modals */}
-      <AIStudyPlanModal
-        isOpen={isStudyPlanOpen}
-        onClose={() => setIsStudyPlanOpen(false)}
-        onSavePlan={handleSaveStudyPlan}
-        onEnrollCourse={(courseId) => {
-          setIsStudyPlanOpen(false);
-          const found = courses.find((c) => c.id === courseId);
-          if (found) handleEnrollInitiated(found);
-        }}
-        language={language}
-      />
+      {isStudyPlanOpen && (
+        <Suspense fallback={<ModalLoading language={language} />}>
+          <AIStudyPlanModal
+            isOpen={isStudyPlanOpen}
+            onClose={() => setIsStudyPlanOpen(false)}
+            onSavePlan={handleSaveStudyPlan}
+            onEnrollCourse={(courseId) => {
+              setIsStudyPlanOpen(false);
+              const found = courses.find((c) => c.id === courseId);
+              if (found) handleEnrollInitiated(found);
+            }}
+            language={language}
+          />
+        </Suspense>
+      )}
 
-      <SpacedRepetitionModal
-        isOpen={isSpacedRepetitionOpen}
-        onClose={() => setIsSpacedRepetitionOpen(false)}
-        onCardReviewed={handleCardReviewed}
-        language={language}
-      />
+      {isSpacedRepetitionOpen && (
+        <Suspense fallback={<ModalLoading language={language} />}>
+          <SpacedRepetitionModal
+            isOpen={isSpacedRepetitionOpen}
+            onClose={() => setIsSpacedRepetitionOpen(false)}
+            onCardReviewed={handleCardReviewed}
+            language={language}
+          />
+        </Suspense>
+      )}
 
-      <PaymentModal
-        course={selectedPaymentCourse}
-        onClose={() => setIsPaymentOpen(false)}
-        onSuccess={handlePaymentSuccess}
-        language={language}
-      />
+      {selectedPaymentCourse && (
+        <Suspense fallback={<ModalLoading language={language} />}>
+          <PaymentModal
+            course={selectedPaymentCourse}
+            onClose={() => setIsPaymentOpen(false)}
+            onSuccess={handlePaymentSuccess}
+            language={language}
+          />
+        </Suspense>
+      )}
 
-      <NotificationsModal
-        isOpen={isNotificationsOpen}
-        onClose={() => setIsNotificationsOpen(false)}
-        onNavigateToBooking={() => setCurrentTab("booking")}
-        onNavigateToSpacedRepetition={() => setIsSpacedRepetitionOpen(true)}
-        language={language}
-      />
+      {isNotificationsOpen && (
+        <Suspense fallback={<ModalLoading language={language} />}>
+          <NotificationsModal
+            isOpen={isNotificationsOpen}
+            onClose={() => setIsNotificationsOpen(false)}
+            onNavigateToBooking={() => setCurrentTab("booking")}
+            onNavigateToSpacedRepetition={() => setIsSpacedRepetitionOpen(true)}
+            language={language}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

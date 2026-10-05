@@ -17,6 +17,14 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "16kb" }));
 
+// The workspace's shared API artifact owns the /api preview route. Use a
+// product-specific prefix locally, while Vercel keeps the standard /api path.
+const artifactBasePath = (process.env.BASE_PATH || "/").replace(/\/?$/, "/");
+const API_PREFIX =
+  process.env.VERCEL === "1"
+    ? "/api"
+    : `${artifactBasePath}_nuclear-knowledge-api`;
+
 const ADMIN_SESSION_COOKIE = "nuclear_admin_session";
 const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const STUDENT_COUNTER_EPOCH = Date.UTC(2026, 9, 5, 0, 0, 0);
@@ -102,8 +110,8 @@ export function calculateRealisticStudentCount(now = Date.now()): {
   };
 }
 
-// API: Realistic live stats
-app.get("/api/stats", (_req, res) => {
+// API: Illustrative learner estimate and platform facts
+app.get(`${API_PREFIX}/stats`, (_req, res) => {
   const stats = calculateRealisticStudentCount();
   res.setHeader("Cache-Control", "public, max-age=30, s-maxage=30");
   res.json({
@@ -111,9 +119,8 @@ app.get("/api/stats", (_req, res) => {
     baseDisplay: "500+",
     lastHourIncrease: stats.lastHourIncrease,
     nextIncrementMinutes: stats.nextIncrementMinutes,
-    coursesCount: 12,
-    satisfactionRate: "98%",
-    experienceYears: "+12",
+    coursesCount: 3,
+    experienceYears: "12+",
   });
 });
 
@@ -128,7 +135,7 @@ function getRequestCookie(req: Request, name: string): string | undefined {
 }
 
 function getAuthConfig() {
-  const password = process.env.ADMIN_PANEL_PASSWORD;
+  const password = process.env.ADMIN_PASSWORD;
   const sessionSecret = process.env.SESSION_SECRET;
   if (!password || !sessionSecret || Buffer.byteLength(sessionSecret) < 32) {
     return null;
@@ -192,6 +199,7 @@ const failedLoginAttempts = new Map<
 >();
 
 function loginRateLimit(req: Request, res: Response, next: NextFunction) {
+  res.setHeader("Cache-Control", "private, no-store");
   const ip = req.ip || req.socket.remoteAddress || "unknown";
   const current = failedLoginAttempts.get(ip);
   if (current && current.resetAt <= Date.now()) {
@@ -222,6 +230,7 @@ function recordFailedLogin(ip: string) {
 }
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  res.setHeader("Cache-Control", "private, no-store");
   if (!getAuthConfig()) {
     res.status(503).json({ error: "Admin authentication is not configured." });
     return;
@@ -230,11 +239,10 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
     res.status(401).json({ error: "Admin authentication required." });
     return;
   }
-  res.setHeader("Cache-Control", "private, no-store");
   next();
 }
 
-app.get("/api/admin/session", (req, res) => {
+app.get(`${API_PREFIX}/admin/session`, (req, res) => {
   if (!getAuthConfig()) {
     res.status(503).json({ error: "Admin authentication is not configured." });
     return;
@@ -243,7 +251,7 @@ app.get("/api/admin/session", (req, res) => {
   res.json({ authenticated: isAdminSessionValid(req) });
 });
 
-app.post("/api/admin/login", loginRateLimit, (req, res) => {
+app.post(`${API_PREFIX}/admin/login`, loginRateLimit, (req, res) => {
   const config = getAuthConfig();
   if (!config) {
     res.status(503).json({ error: "Admin authentication is not configured." });
@@ -270,21 +278,22 @@ app.post("/api/admin/login", loginRateLimit, (req, res) => {
   res.json({ authenticated: true });
 });
 
-app.post("/api/admin/logout", (_req, res) => {
+app.post(`${API_PREFIX}/admin/logout`, (_req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
   clearAdminSessionCookie(res);
   res.status(204).end();
 });
 
-app.get("/api/admin/students", requireAdmin, (_req, res) => {
+app.get(`${API_PREFIX}/admin/students`, requireAdmin, (_req, res) => {
   res.json(ADMIN_STUDENTS);
 });
 
-app.get("/api/admin/parent-report", requireAdmin, (_req, res) => {
+app.get(`${API_PREFIX}/admin/parent-report`, requireAdmin, (_req, res) => {
   res.json(ADMIN_PARENT_REPORT);
 });
 
 // API: AI Study Plan Generator using Gemini 3.8 Flash
-app.post("/api/ai/study-plan", async (req, res) => {
+app.post(`${API_PREFIX}/ai/study-plan`, async (req, res) => {
   try {
     const body = req.body && typeof req.body === "object" ? req.body : {};
     const readText = (value: unknown, fallback: string, maxLength: number) =>
@@ -459,7 +468,7 @@ Return strictly valid JSON without markdown quotes.`
     });
   } catch (error) {
     console.error("AI Study Plan Error:", error);
-    res.status(500).json({ error: "Failed to generate study plan." });
+    return res.status(500).json({ error: "Failed to generate study plan." });
   }
 });
 

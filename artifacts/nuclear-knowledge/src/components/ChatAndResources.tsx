@@ -123,12 +123,12 @@ export function ChatAndResources({ language }: ChatAndResourcesProps) {
       <div className="border-b border-slate-800 pb-5">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-2.5">
           <MessageSquare className="size-6 text-cyan-400" />
-          <span>{isEn ? "Direct Q&A & Resource Sharing Hub" : "مجتمع النقاش المباشر ومكتبة الموارد التعليمية"}</span>
+          <span>{isEn ? "Study discussion & resources" : "النقاش الدراسي والموارد التعليمية"}</span>
         </h2>
         <p className="text-xs sm:text-sm text-slate-300 mt-1">
           {isEn
-            ? "Ask Eng. Mahmoud directly, share study resources, and download certified formula guides."
-            : "تواصل مع المهندس محمود والمدربين مباشرة، وتشارك الأسئلة والملخصات مع زملائك في المملكة والخليج."}
+            ? "Try the guided study chat and browse formula sheets and learning resources."
+            : "استخدم محادثة التدريب التفاعلية وتصفّح ملخصات القوانين والموارد التعليمية."}
         </p>
       </div>
 
@@ -140,7 +140,7 @@ export function ChatAndResources({ language }: ChatAndResourcesProps) {
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-emerald-400 pulse-dot" />
               <span className="text-xs font-bold text-white">
-                {isEn ? "Live Instructor Q&A Channel" : "قناة الأسئلة المباشرة مع المدرب"}
+                {isEn ? "Practice discussion chat" : "محادثة تدريبية تفاعلية"}
               </span>
             </div>
             <span className="text-[11px] font-mono text-cyan-400">12 متصل الآن</span>

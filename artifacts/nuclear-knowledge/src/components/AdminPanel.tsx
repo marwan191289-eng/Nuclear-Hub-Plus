@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Role, UserProfile } from "../types";
-import { AlertCircle, BarChart3, BookOpen, Eye, EyeOff, GraduationCap, LockKeyhole, LogOut, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
+import { appPath } from "../lib/app-path";
+import { AlertCircle, BookOpen, Eye, EyeOff, GraduationCap, Languages, LockKeyhole, LogOut, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
 
 interface AdminPanelProps {
   currentUser: UserProfile;
@@ -23,7 +24,6 @@ interface StatsResponse {
   lastHourIncrease: number;
   nextIncrementMinutes: number;
   coursesCount: number;
-  satisfactionRate: string;
   experienceYears: string;
 }
 interface ParentReport {
@@ -44,7 +44,7 @@ const copy = {
     futureNote: "لا توجد واجهة خادم لهذه الميزة حتى الآن؛ لن يتم عرض بيانات تجريبية أو الإيحاء بإرسالها.",
     search: "ابحث بالاسم أو البريد أو المقرر", name: "الطالب", course: "المقرر", progress: "التقدم", attendance: "الحضور", score: "متوسط الاختبارات", status: "الحالة",
     empty: "لا توجد سجلات طلاب لعرضها.", statsError: "تعذر تحميل الإحصاءات.", studentsError: "تعذر تحميل سجل الطلاب.",
-    studentsCount: "الطلاب المسجلون", coursesCount: "المقررات", satisfaction: "معدل الرضا", experience: "سنوات الخبرة",
+    studentsCount: "تقدير عدد المتعلمين", coursesCount: "المقررات المتاحة", languages: "لغات المنصة", experience: "سنوات الخبرة",
     roleNotice: "تبديل الدور هنا للمعاينة فقط ولا يمنح صلاحيات الخادم.", retry: "إعادة المحاولة", show: "إظهار كلمة المرور", hide: "إخفاء كلمة المرور",
     loading: "جارٍ تحميل بيانات الطلاب…", noMatch: "لا توجد نتائج مطابقة."
   },
@@ -56,7 +56,7 @@ const copy = {
     futureNote: "There is no server interface for this feature yet; no sample data will be shown and no delivery will be implied.",
     search: "Search name, email, or course", name: "Student", course: "Course", progress: "Progress", attendance: "Attendance", score: "Quiz average", status: "Status",
     empty: "There are no student records to display.", statsError: "Could not load platform statistics.", studentsError: "Could not load the student roster.",
-    studentsCount: "Enrolled students", coursesCount: "Courses", satisfaction: "Satisfaction", experience: "Years of experience",
+    studentsCount: "Estimated learners", coursesCount: "Available courses", languages: "Interface languages", experience: "Years of experience",
     roleNotice: "Role switching here is for preview only and does not grant server permissions.", retry: "Try again", show: "Show password", hide: "Hide password",
     loading: "Loading student records…", noMatch: "No matching records."
   }
@@ -85,7 +85,7 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
     setAuth("checking");
     setMessage("");
     try {
-      const response = await fetch("/api/admin/session", { credentials: "include" });
+      const response = await fetch(appPath("/api/admin/session"), { credentials: "include" });
       if (!response.ok) throw new Error("session");
       const data = await response.json() as { authenticated: boolean };
       onRoleSwitch(data.authenticated ? "admin" : "student");
@@ -105,7 +105,7 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
     }
     const controller = new AbortController();
     setStudentsState("loading");
-    fetch("/api/admin/students", { credentials: "include", signal: controller.signal })
+    fetch(appPath("/api/admin/students"), { credentials: "include", signal: controller.signal })
       .then((response) => {
         if (response.status === 401 || response.status === 403) {
           setStudents([]);
@@ -130,7 +130,7 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
   useEffect(() => {
     if (auth !== "authenticated") return;
     const controller = new AbortController();
-    fetch("/api/stats", { credentials: "include", signal: controller.signal })
+    fetch(appPath("/api/stats"), { credentials: "include", signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("stats");
         return response.json() as Promise<StatsResponse>;
@@ -147,7 +147,7 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
     }
     const controller = new AbortController();
     setParentReportState("loading");
-    fetch("/api/admin/parent-report", { credentials: "include", signal: controller.signal })
+    fetch(appPath("/api/admin/parent-report"), { credentials: "include", signal: controller.signal })
       .then((response) => {
         if (response.status === 401 || response.status === 403) {
           setParentReport(null);
@@ -175,7 +175,7 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
     setBusy(true);
     setMessage("");
     try {
-      const response = await fetch("/api/admin/login", {
+      const response = await fetch(appPath("/api/admin/login"), {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -201,7 +201,7 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
     setPassword("");
     setMessage("");
     try {
-      const response = await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
+      const response = await fetch(appPath("/api/admin/logout"), { method: "POST", credentials: "include" });
       if (!response.ok) await verifySession();
     } catch {
       await verifySession();
@@ -274,7 +274,7 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
               {[
                 { label: t.studentsCount, value: stats?.studentsCount, icon: Users },
                 { label: t.coursesCount, value: stats?.coursesCount, icon: BookOpen },
-                { label: t.satisfaction, value: stats?.satisfactionRate, icon: BarChart3 },
+                { label: t.languages, value: "AR + EN", icon: Languages },
                 { label: t.experience, value: stats?.experienceYears, icon: GraduationCap }
               ].map(({ label, value, icon: Icon }) => (
                 <article key={label} className="rounded-2xl border border-[#dce1d9] bg-[#fffefa] p-5 shadow-[0_8px_24px_rgba(34,59,49,.04)]">

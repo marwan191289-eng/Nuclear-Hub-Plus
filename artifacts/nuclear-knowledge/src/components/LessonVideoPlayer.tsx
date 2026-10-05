@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Lesson } from "../types";
+import { appPath } from "../lib/app-path";
 import {
   Play,
   Pause,
@@ -31,6 +32,8 @@ export function LessonVideoPlayer({
   language,
 }: LessonVideoPlayerProps) {
   const isEn = language === "en";
+  const fallbackVideoUrl = appPath(`/videos/${lesson.id}.mp4`);
+  const videoUrl = lesson.videoUrl ? appPath(lesson.videoUrl) : fallbackVideoUrl;
 
   // Player mode: "video" (HTML5 video stream) or "simulation" (60fps canvas simulation)
   const [playerMode, setPlayerMode] = useState<"video" | "simulation">("video");
@@ -58,10 +61,10 @@ export function LessonVideoPlayer({
     setVideoError(false);
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
-      videoRef.current.src = lesson.videoUrl || `/videos/${lesson.id}.mp4`;
+      videoRef.current.src = videoUrl;
       videoRef.current.load();
     }
-  }, [lesson.id, lesson.videoUrl]);
+  }, [lesson.id, lesson.videoUrl, videoUrl]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -71,8 +74,8 @@ export function LessonVideoPlayer({
         .then(() => setIsPlaying(true))
         .catch(() => {
           // If browser restricts autoplay or media, try fallback or switch to interactive simulation
-          if (videoRef.current && videoRef.current.src !== `/videos/${lesson.id}.mp4`) {
-            videoRef.current.src = `/videos/${lesson.id}.mp4`;
+          if (videoRef.current && !videoRef.current.src.endsWith(`/videos/${lesson.id}.mp4`)) {
+            videoRef.current.src = fallbackVideoUrl;
             videoRef.current.load();
             videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {
               setPlayerMode("simulation");
@@ -469,7 +472,7 @@ export function LessonVideoPlayer({
           <div className="relative aspect-video flex items-center justify-center bg-black">
             <video
               ref={videoRef}
-              src={lesson.videoUrl || `/videos/${lesson.id}.mp4`}
+              src={videoUrl}
               playsInline
               preload="metadata"
               onTimeUpdate={handleTimeUpdate}
@@ -480,8 +483,8 @@ export function LessonVideoPlayer({
               }}
               onError={() => {
                 // If remote or current URL failed, try local fallback
-                if (videoRef.current && videoRef.current.src !== `/videos/${lesson.id}.mp4` && !videoRef.current.src.endsWith(`/videos/${lesson.id}.mp4`)) {
-                  videoRef.current.src = `/videos/${lesson.id}.mp4`;
+                if (videoRef.current && !videoRef.current.src.endsWith(`/videos/${lesson.id}.mp4`)) {
+                  videoRef.current.src = fallbackVideoUrl;
                   videoRef.current.load();
                 } else {
                   setVideoError(true);
@@ -505,7 +508,7 @@ export function LessonVideoPlayer({
                     onClick={() => {
                       setVideoError(false);
                       if (videoRef.current) {
-                        videoRef.current.src = `/videos/${lesson.id}.mp4`;
+                        videoRef.current.src = fallbackVideoUrl;
                         videoRef.current.load();
                         videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
                       }

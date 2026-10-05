@@ -146,7 +146,7 @@ export function StudentPortal({
 
         <div className="text-xs text-slate-400 font-mono flex items-center gap-2">
           <span className="size-2 rounded-full bg-emerald-400 pulse-dot" />
-          <span>{isEn ? "Data verified & synced" : "البيانات الأكاديمية محدثة ومعتمدة"}</span>
+          <span>{isEn ? "Progress saved in this browser" : "يُحفظ تقدمك في هذا المتصفح"}</span>
         </div>
       </div>
 
@@ -235,14 +235,14 @@ export function StudentPortal({
               })}
             </div>
 
-            {/* Course Certificate Button */}
+            {/* Completion preview button */}
             <div className="pt-2 border-t border-slate-800">
               <button
                 onClick={() => setShowCertificate(true)}
                 className="w-full flex items-center justify-center gap-2 rounded-xl border border-pink-500/40 bg-pink-950/30 p-2.5 text-xs font-bold text-pink-300 hover:bg-pink-900/40 transition-all cursor-pointer"
               >
                 <Award className="size-4" />
-                <span>{isEn ? "View Certified Digital Diploma" : "عرض الشهادة الرقمية المعتمدة"}</span>
+                <span>{isEn ? "View completion preview" : "عرض معاينة الإنجاز"}</span>
               </button>
             </div>
           </div>
@@ -366,35 +366,39 @@ export function StudentPortal({
       </div>
       )}
 
-      {/* Digital Certificate Modal */}
+      {/* Non-accredited completion preview */}
       {showCertificate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="relative w-full max-w-2xl rounded-3xl border-2 border-amber-400/60 bg-[#080d19] p-8 text-center space-y-6 shadow-[0_0_90px_rgba(245,158,11,0.35)]">
             <div className="flex justify-between items-center text-xs font-mono text-amber-400 border-b border-amber-500/30 pb-3">
-              <span>ACCREDITED DIGITAL CERTIFICATE</span>
-              <span className="font-mono">VERIFIED ID: #KH-2026-{currentUser.id.slice(0, 6)}</span>
+              <span>{isEn ? "SAMPLE COMPLETION PREVIEW · NOT AN OFFICIAL CREDENTIAL" : "معاينة إنجاز تجريبية · ليست شهادة رسمية"}</span>
+              <span className="font-mono">PREVIEW ID: {currentUser.id.slice(0, 6)}</span>
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs uppercase tracking-widest text-slate-400">شهادة إتمام وتفوق أكاديمي</div>
-              <h2 className="text-2xl font-extrabold text-white">منصة المهندس محمود شلتوت للكيمياء النووية</h2>
+              <div className="text-xs uppercase tracking-widest text-slate-400">{isEn ? "Learning milestone preview" : "معاينة إنجاز تعليمي"}</div>
+              <h2 className="text-2xl font-extrabold text-white">
+                {isEn ? "Nuclear Knowledge Hub" : "منصة المهندس محمود شلتوت للكيمياء النووية"}
+              </h2>
             </div>
 
             <div className="py-4 border-y border-slate-800 space-y-2">
-              <p className="text-xs text-slate-400">تشهد المنصة بأن الطالب المتميز</p>
+              <p className="text-xs text-slate-400">{isEn ? "Sample profile" : "ملف تعليمي تجريبي"}</p>
               <div className="text-2xl font-black text-amber-300">{currentUser.name}</div>
               <p className="text-xs text-slate-300 max-w-md mx-auto">
-                قد أتم بنجاح متطلبات التدريب والاختبارات في مقرر: <strong className="text-white">«{selectedCourse.title}»</strong> بمعدل تراكمي ممتاز {currentUser.avgQuizScore}% واستوفى معايير السلامة والكينيتيكا النووية.
+                {isEn
+                  ? <>This preview shows local learning data for <strong className="text-white">{selectedCourse.title}</strong>, including a sample quiz score of {currentUser.avgQuizScore}%. It does not verify course completion or grant a qualification.</>
+                  : <>تعرض هذه المعاينة بيانات التعلّم المحلية لمقرر <strong className="text-white">«{selectedCourse.title}»</strong>، ومنها نتيجة اختبار تجريبية {currentUser.avgQuizScore}٪. لا تثبت إتمام مقرر ولا تمنح مؤهلًا.</>}
               </p>
             </div>
 
             <div className="flex items-center justify-between pt-2 px-6 text-xs text-slate-400">
               <div className="text-right">
-                <div className="text-slate-300 font-bold">المهندس/ محمود إسماعيل شلتوت</div>
-                <div className="text-[10px]">المشرف الأكاديمي والمدرب العام</div>
+                <div className="text-slate-300 font-bold">{isEn ? "Learning progress" : "تقدم التعلّم"}</div>
+                <div className="text-[10px]">{isEn ? "Saved on this device" : "محفوظ على هذا الجهاز"}</div>
               </div>
               <div className="flex size-14 items-center justify-center rounded-lg border border-amber-400/40 bg-black/50 p-1 text-[8px] font-mono text-amber-300">
-                [QR CODE VERIFIED]
+                {isEn ? "[PREVIEW ONLY]" : "[معاينة فقط]"}
               </div>
             </div>
 
@@ -404,7 +408,7 @@ export function StudentPortal({
                 className="flex items-center gap-1.5 rounded-xl bg-amber-400 px-5 py-2 text-xs font-bold text-slate-950 hover:bg-amber-300 cursor-pointer shadow-[0_0_20px_rgba(245,158,11,0.4)]"
               >
                 <Download className="size-4" />
-                <span>{isEn ? "Print / Download PDF" : "تحميل الشهادة وطباعتها"}</span>
+                <span>{isEn ? "Print this preview" : "طباعة المعاينة"}</span>
               </button>
               <button
                 onClick={() => setShowCertificate(false)}

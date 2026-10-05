@@ -16,7 +16,7 @@ export function HeroSection({
   onOpenSimulator,
   language,
 }: HeroSectionProps) {
-  const { count, isPulsing, notification, isLoading, error, coursesCount, satisfactionRate, experienceYears, lastHourIncrease } = useStudentCounter();
+  const { count, isPulsing, notification, isLoading, error, coursesCount, experienceYears, lastHourIncrease } = useStudentCounter();
   const isEn = language === "en";
 
   return (
@@ -120,7 +120,7 @@ export function HeroSection({
                 <>
                   Specialized courses and private 1-on-1 tutoring by{" "}
                   <strong className="text-white font-semibold">Eng. Mahmoud Ismail Shaltoot</strong> —
-                  Nuclear Chemical Engineer and certified instructor. Building deep conceptual mastery
+                  Nuclear chemistry instructor with a focus on building deep conceptual mastery
                   from reactions and isotopes to full reactor engineering.
                 </>
               ) : (
@@ -164,9 +164,9 @@ export function HeroSection({
                   <span className={`font-bold transition-all duration-300 ${isPulsing ? "text-[#00f0ff] scale-110" : "text-slate-200"}`} aria-live="polite">
                     {isLoading || error ? "—" : count.toLocaleString(language === "ar" ? "ar-SA" : "en-US")}
                   </span>
-                  <span className="font-sans font-normal text-slate-300" dir="rtl">{isEn ? "Students" : "طالب"}</span>
+                   <span className="font-sans font-normal text-slate-300" dir="rtl">{isEn ? "Estimated learners" : "متعلم (تقديري)"}</span>
                 </span>
-                {lastHourIncrease !== null && lastHourIncrease > 0 && <span className="text-[10px] font-mono text-cyan-300" dir="ltr">+{lastHourIncrease} {isEn ? "this hour" : "خلال الساعة الماضية"}</span>}
+                {lastHourIncrease !== null && lastHourIncrease > 0 && <span className="text-[10px] font-mono text-cyan-300" dir="ltr">+{lastHourIncrease} {isEn ? "est. this hour" : "تقديريًا خلال الساعة"}</span>}
               </span>
               <span className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-[#00f0ff] shadow-[0_0_8px_#00f0ff]" />
@@ -183,7 +183,7 @@ export function HeroSection({
         {/* Stats Section exactly matching the bottom of user image */}
         <div className="mt-16 lg:mt-20 border-t border-slate-800/80 pt-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center sm:text-right">
-            {/* +5 سنوات خبرة */}
+            {/* 12+ years of experience */}
             <div className="p-3">
               <div className="text-4xl lg:text-5xl font-black text-[#ec4899] drop-shadow-[0_0_20px_rgba(236,72,153,0.5)] font-mono" dir="ltr">
                 {experienceYears ?? "—"}
@@ -193,13 +193,13 @@ export function HeroSection({
               </div>
             </div>
 
-            {/* 98% نسبة الرضا */}
+            {/* Supported interface languages */}
             <div className="p-3">
               <div className="text-4xl lg:text-5xl font-black text-white font-mono" dir="ltr">
-                {satisfactionRate ?? "—"}
+                AR + EN
               </div>
               <div className="mt-2 text-sm text-slate-400 font-medium">
-                {isEn ? "Satisfaction Rate" : "نسبة الرضا"}
+                {isEn ? "Interface Languages" : "لغات المنصة"}
               </div>
             </div>
 
@@ -226,9 +226,12 @@ export function HeroSection({
                 {isLoading || error ? "—" : count.toLocaleString(language === "ar" ? "ar-SA" : "en-US")}
               </div>
               <div className="mt-2 flex items-center justify-center sm:justify-start gap-1.5 text-sm text-slate-400 font-medium">
-                <span>{isEn ? "Students Enrolled" : "طالب وطالبة"}</span>
-                <span className="size-2 rounded-full bg-cyan-400 pulse-dot inline-block" title="عداد الطلاب الفعلي المباشر المتزامن" />
+                <span>{isEn ? "Estimated Learners" : "متعلم (تقديري)"}</span>
+                <span className="size-2 rounded-full bg-cyan-400 pulse-dot inline-block" title={isEn ? "Illustrative estimate, not live enrollment data" : "تقدير توضيحي، وليس بيانات تسجيل مباشرة"} />
               </div>
+              <p className="mt-1 text-[10px] text-slate-500">
+                {isEn ? "Illustrative estimate, not live enrollment data." : "تقدير توضيحي، وليس عدد التسجيلات الفعلية."}
+              </p>
             </div>
           </div>
         </div>

@@ -1,15 +1,20 @@
-# [Project name]
+# Nuclear Knowledge Hub
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Arabic-first bilingual learning platform for nuclear chemistry, reactor engineering, and radiation safety, serving university students in Saudi Arabia and the Gulf.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm install --frozen-lockfile` — install the workspace dependencies
+- `pnpm --filter @workspace/nuclear-knowledge run dev` — run the app in the managed workflow
+- `pnpm --filter @workspace/nuclear-knowledge run typecheck` — check frontend, Express API, and Vercel handler types
+- `pnpm --filter @workspace/nuclear-knowledge run test` — run server/auth and hourly-counter tests
+- `pnpm --filter @workspace/nuclear-knowledge run build` — build the production Vite bundle
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required secrets: `ADMIN_PASSWORD` and `SESSION_SECRET` (at least 32 bytes)
+- Optional secret: `GEMINI_API_KEY` — enables Gemini study-plan generation; a built-in fallback works without it
 
 ## Stack
 
@@ -22,24 +27,35 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/nuclear-knowledge/src/` — React UI, courses, lesson tools, and styles
+- `artifacts/nuclear-knowledge/server.ts` — Express API, signed admin sessions, and hourly stats
+- `artifacts/nuclear-knowledge/api/` — Vercel serverless API entry point
+- `artifacts/nuclear-knowledge/vercel.json` — Vercel build and SPA routing configuration
+- `repos/Nuclear-knowledge` and `repos/knowledge-hub-plus` — preserved imported repository snapshots
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Admin credentials are checked on the server using the `ADMIN_PASSWORD` secret; signed, HTTP-only sessions use `SESSION_SECRET`.
+- The public student counter is a transparent deterministic estimate, not live enrollment data; each hourly change is capped at three.
+- The admin roster and parent report are preview samples, not persistent student records.
+- The Vercel-ready app is `artifacts/nuclear-knowledge` within this pnpm workspace.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The app provides bilingual courses, lessons, educational articles, study planning, learning simulators, booking/contact flows, and an authenticated administration preview.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Keep the displayed instructor experience at 12+ years.
+- Limit student-counter growth to at most three per hour, including quiet hours with no increase.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Run package commands through pnpm; package dependencies resolve from the workspace lockfile/catalog.
+- The Vercel project root is `artifacts/nuclear-knowledge`, and shared workspace files must be included in its build.
+- Add `ADMIN_PASSWORD` and a strong `SESSION_SECRET` separately to Vercel; Replit Secrets do not transfer automatically.
 
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- See `artifacts/nuclear-knowledge/README.md` for Vercel setup and required environment variables

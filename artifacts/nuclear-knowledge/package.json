@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build --config vite.config.ts",
+    "build": "BASE_PATH=/ vite build --config vite.config.ts",
     "serve": "tsx server.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test tests/server.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

@@ -56,7 +56,7 @@ export function GamificationSection({ currentUser, language }: GamificationSecti
         </h2>
         <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto leading-relaxed">
           {isEn
-            ? "Engineered for university engineering, physics, and chemistry undergraduates — compete on peer-reviewed problem solving, reactor simulation metrics, and advanced nuclear calculations."
+            ? "Built for university engineering, physics, and chemistry students to practice nuclear problems, use reactor simulations, and work through advanced calculations."
             : "منظومة مصممة لطلاب كليات الهندسة والعلوم والباحثين بالمملكة والخليج — تنافس أكاديمياً عبر حل المسائل المتقدمة، تحليل حركية المفاعلات، وتحديات المحاكاة العملية الميدانية."}
         </p>
       </div>
@@ -70,12 +70,12 @@ export function GamificationSection({ currentUser, language }: GamificationSecti
               <div>
                 <span className="text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <GraduationCap className="size-3.5" />
-                  {isEn ? "Current Academic Standing" : "المرتبة الأكاديمية الحالية"}
+                  {isEn ? "Current learning level" : "مستوى التعلّم الحالي"}
                 </span>
                 <h3 className="text-2xl font-black text-white mt-1">{currentUser.level}</h3>
               </div>
               <div className="flex flex-col items-center justify-center rounded-2xl bg-cyan-500/10 px-4 py-2 text-[#00f0ff] border border-cyan-500/40 font-mono shadow-[0_0_20px_rgba(0,240,255,0.25)]">
-                <span className="text-xs font-bold text-slate-400 uppercase">النقاط الأكاديمية</span>
+                <span className="text-xs font-bold text-slate-400 uppercase">{isEn ? "Progress points" : "نقاط التقدم"}</span>
                 <span className="text-xl font-black text-white">{currentUser.xp} <span className="text-xs text-cyan-400">XP</span></span>
               </div>
             </div>
@@ -95,14 +95,14 @@ export function GamificationSection({ currentUser, language }: GamificationSecti
             </div>
           </div>
 
-          {/* Academic Accreditations & Badges */}
+          {/* In-app learning badges */}
           <div className="rounded-3xl border border-slate-800 bg-[#070c18] p-6 space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                 <Award className="size-4 text-cyan-400" />
-                {isEn ? "Academic Distinctions & Certifications" : "الأوسمة الأكاديمية ورتب التميز العلمي"}
+                {isEn ? "Learning badges & milestones" : "أوسمة التعلّم والإنجاز"}
               </h4>
-              <span className="text-[11px] text-slate-400 font-mono">معايير الاعتماد الأكاديمي</span>
+              <span className="text-[11px] text-slate-400 font-mono">{isEn ? "Earned in this platform" : "تُكتسب داخل المنصة"}</span>
             </div>
 
             <div className="grid grid-cols-1 gap-3">

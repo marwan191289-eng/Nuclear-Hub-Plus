@@ -1,6 +1,6 @@
 import React from "react";
 import mahmoudImg from "../assets/mahmoud-lab-coat.png";
-import { CheckCircle, GraduationCap, MessageSquare, ShieldCheck, Sparkles } from "lucide-react";
+import { CheckCircle, GraduationCap, MessageSquare, Sparkles } from "lucide-react";
 
 interface InstructorPageProps {
   onBookSession: () => void;
@@ -12,14 +12,16 @@ export function InstructorPage({ onBookSession, language }: InstructorPageProps)
 
   const credentials = isEn
     ? [
-        "B.Sc. Chemical & Nuclear Engineering with Honors",
-        "Certified Radiation Protection Officer (RSO) - IAEA Standards",
-        "Specialist in Nuclear Reactor Thermal-Hydraulics & Fuel Cycle Analysis",
+        "Teaching focus: nuclear chemistry and reactor engineering",
+        "Radiation-safety lessons informed by IAEA guidance",
+        "Course topics include reactor thermal-hydraulics and fuel-cycle analysis",
+        "12+ years of specialized teaching and academic support",
       ]
     : [
-        "بكالوريوس هندسة كيميائية ونووية مع مرتبة الشرف",
-        "مسؤول حماية إشعاعية معتمد (RSO) وفق معايير الوكالة الدولية للطاقة الذرية",
-        "متخصص في ديناميكا قلب المفاعلات وحسابات دورة الوقود والنفايات النووية",
+        "مجالات التدريس: الكيمياء النووية وهندسة المفاعلات",
+        "دروس السلامة الإشعاعية مستندة إلى إرشادات الوكالة الدولية للطاقة الذرية",
+        "تتضمن المقررات ديناميكا حراريات المفاعل ودورة الوقود النووي",
+        "أكثر من 12 سنة في التدريس التخصصي والدعم الأكاديمي",
       ];
 
   return (
@@ -39,7 +41,7 @@ export function InstructorPage({ onBookSession, language }: InstructorPageProps)
                 />
                 <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/60 to-transparent p-4 text-center">
                   <div className="text-white font-bold text-sm">المهندس/ محمود إسماعيل شلتوت</div>
-                  <div className="text-cyan-400 text-xs font-medium">مهندس كيمياء نووية ومدرّب معتمد</div>
+                  <div className="text-cyan-400 text-xs font-medium">مدرّب كيمياء نووية</div>
                 </div>
               </div>
             </div>
@@ -59,13 +61,13 @@ export function InstructorPage({ onBookSession, language }: InstructorPageProps)
             <p className="text-base text-slate-300 leading-relaxed font-normal">
               {isEn ? (
                 <>
-                  Nuclear Chemical Engineer and dedicated mentor passionately bridging fundamental atomic science
+                  Nuclear chemistry instructor and dedicated mentor, bridging fundamental atomic science
                   with advanced reactor technologies. Specializing in curriculum design, university exam prep,
                   and radiological safety training for students across the Kingdom of Saudi Arabia and the Arabian Gulf.
                 </>
               ) : (
                 <>
-                  مهندس كيمياء نووية ومدرّب شغوف بنقل علوم الذرة والطاقة النووية من أفق النظريات الجافة إلى الفهم
+                  مدرّب كيمياء نووية شغوف بنقل علوم الذرة والطاقة النووية من أفق النظريات الجافة إلى الفهم
                   الواقعي التطبيقي الممتع. نؤسس الطلاب في جميع مفردات الكيمياء والفيزياء الإشعاعية، ونعدّهم
                   للتفوق الدراسي في الجامعات والمؤسسات البحثية والصناعية الكبرى.
                 </>
@@ -136,16 +138,16 @@ export function InstructorPage({ onBookSession, language }: InstructorPageProps)
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-[#080d19] p-6 space-y-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300">
-            <ShieldCheck className="size-5" />
+            <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300">
+              <CheckCircle className="size-5" />
           </div>
           <h3 className="text-base font-bold text-white">
-            {isEn ? "Verified Accreditation" : "شهادات معتمدة وتدريب عملي"}
+              {isEn ? "Learning progress" : "متابعة التقدم"}
           </h3>
           <p className="text-xs text-slate-300 leading-relaxed">
             {isEn
-              ? "Receive digitally verifiable certificates with QR codes upon course completion, backed by rigorous assessments."
-              : "يحصل الطالب بعد اجتياز الدورة على شهادة إتمام رقمية معتمدة برمز تحقق QR تؤكد تمكنه العملي من المعايير المطلوبة."}
+                ? "Track completed lessons and practice milestones as you work through each course."
+                : "تابع الدروس التي أتممتها والتمارين التي أنجزتها خلال تقدمك في المقرر."}
           </p>
         </div>
       </div>

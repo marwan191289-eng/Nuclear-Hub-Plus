@@ -12,9 +12,15 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-const basePath = process.env.BASE_PATH ?? '/';
+export default defineConfig(async ({ command }) => {
+  const configuredBasePath =
+    process.env.BASE_PATH ?? (command === 'serve' ? '/nuclear-knowledge/' : '/');
+  const basePath =
+    configuredBasePath === '/'
+      ? '/'
+      : `/${configuredBasePath.replace(/^\/+|\/+$/g, '')}/`;
 
-export default defineConfig({
+  return {
   base: basePath,
   plugins: [
     react(),
@@ -65,4 +71,5 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: true,
   },
+  };
 });
