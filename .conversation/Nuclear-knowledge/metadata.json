@@ -1,0 +1,6 @@
+{
+  "name": "منصة المهندس محمود شلتوت للكيمياء النووية",
+  "description": "منصة تعليمية متقدمة في الكيمياء النووية والمفاعلات للمهندس محمود إسماعيل شلتوت، مزودة بخطط دراسية ذكية عبر AI Gateway وبوابات مخصصة للطلاب والمعلمين وأولياء الأمور.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

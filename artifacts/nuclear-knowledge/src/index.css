@@ -1,0 +1,100 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap");
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #f4f2eb;
+    --card-bg: #fffefa;
+    --primary-cyan: #347b70;
+    --accent-pink: #b36d52;
+    --border-color: #d9ded6;
+    --ink: #192d2a;
+    --muted: #60716d;
+    color-scheme: light;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg-main);
+    color: var(--ink);
+    font-family: "IBM Plex Sans Arabic", "Manrope", sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, textarea, select { font: inherit; }
+  button { -webkit-tap-highlight-color: transparent; }
+  :focus-visible {
+    outline: 3px solid #9b5e43;
+    outline-offset: 3px;
+  }
+  ::selection { background: #d8e8df; color: #192d2a; }
+}
+
+/* A restrained field-notes texture, used as atmosphere rather than decoration. */
+.bg-grid-nuclear {
+  background-size: 46px 46px;
+  background-image:
+    linear-gradient(to right, rgba(45, 92, 82, .055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(45, 92, 82, .055) 1px, transparent 1px);
+}
+.bg-radial-vignette { background: radial-gradient(ellipse at 50% 20%, rgba(144, 182, 162, .2), transparent 68%); }
+
+.tap-glow, .tap-ring, .tap-spark { display: none !important; }
+.pulse-dot { animation: soft-pulse 2.8s ease-in-out infinite; }
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .62; transform: scale(.9); }
+}
+
+/* Keep the inherited component system coherent while gradually replacing its neon-era tokens. */
+[class~="text-cyan-300"], [class~="text-cyan-400"], [class~="text-[#00f0ff]"] { color: #477f72 !important; }
+[class~="text-pink-300"], [class~="text-pink-400"], [class~="text-[#ec4899]"] { color: #ad6b52 !important; }
+[class~="border-cyan-500/20"], [class~="border-cyan-500/30"], [class~="border-cyan-500/40"],
+[class~="border-slate-800"], [class~="border-slate-800/80"] { border-color: #d9ded6 !important; }
+[class~="bg-[#040711]"], [class~="bg-[#030712]"], [class~="bg-[#030612]"],
+[class~="bg-[#03060f]"], [class~="bg-[#050811]"] { background-color: #f4f2eb !important; }
+
+/* Palette bridge for the inherited component classes: one light, mineral study surface. */
+[class*="bg-[#0"], [class*="bg-[#1"], [class*="bg-[#2"],
+[class*="bg-slate-900"], [class*="bg-slate-800"], [class*="bg-slate-950"] {
+  background-color: #fffefa !important;
+}
+[class*="from-[#0"], [class*="from-[#1"], [class*="from-[#2"],
+[class*="via-[#0"], [class*="via-[#1"], [class*="to-[#0"], [class*="to-[#1"] {
+  background-image: none !important;
+}
+[class~="text-white"] { color: #20352f !important; }
+[class~="text-slate-100"] { color: #294139 !important; }
+[class~="text-slate-200"] { color: #40584d !important; }
+[class~="text-slate-300"] { color: #53665c !important; }
+[class~="text-slate-400"] { color: #718078 !important; }
+[class*="border-slate-7"], [class*="border-slate-8"], [class*="border-slate-9"] { border-color: #d9ded6 !important; }
+button[class*="bg-gradient-to-r"], button[class*="bg-cyan-500"], button[class*="bg-pink-500"] {
+  background-image: none !important;
+  background-color: #2e6658 !important;
+  color: #fffefa !important;
+  box-shadow: 0 8px 18px rgba(37, 79, 66, .14) !important;
+}
+header.sticky {
+  background-color: rgba(250, 249, 243, .94) !important;
+  border-color: #d9ded6 !important;
+  box-shadow: 0 8px 28px rgba(38, 57, 48, .07) !important;
+}
+footer {
+  background: #e9ede5 !important;
+  color: #53665c;
+}
+main > div, main > section { scroll-margin-top: 6rem; }
+
+@media (max-width: 767px) {
+  h1 { text-wrap: balance; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}

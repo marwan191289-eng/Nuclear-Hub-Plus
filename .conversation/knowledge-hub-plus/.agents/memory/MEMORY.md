@@ -1,0 +1,2 @@
+- [Instructor access provisioning](instructor-access.md) — only Mahmoud's formally verified account may manage student records; keep student data server-side.
+- [Vite workspace cache](vite-workspace-cache.md) — ignore generated Replit cache trees in the dev watcher to prevent open-file exhaustion on startup.

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Nuclear Knowledge Hub"
+description = "Arabic-first nuclear chemistry learning platform with courses, lessons, study tools, articles, student portal, and a protected administration area."
+version = "1.0.0"
+id = "artifacts/nuclear-knowledge"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25487
+
+[services.development]
+run = "pnpm --filter @workspace/nuclear-knowledge run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nuclear-knowledge", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/nuclear-knowledge/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25487"
+BASE_PATH = "/"

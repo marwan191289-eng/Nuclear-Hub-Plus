@@ -1,0 +1,414 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+@layer theme, base, clerk, components, utilities;
+@import "tailwindcss" source(none);
+@import "@clerk/ui/themes/shadcn.css";
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-panel: var(--panel);
+  --color-dim: var(--dim);
+  --font-display: "Space Grotesk", "IBM Plex Sans Arabic", sans-serif;
+  --font-body: "IBM Plex Sans Arabic", sans-serif;
+}
+
+:root {
+  --radius: 1rem;
+  --background: oklch(0.105 0.012 255);
+  --foreground: oklch(0.95 0.012 225);
+  --card: oklch(0.15 0.018 255);
+  --card-foreground: oklch(0.95 0.012 225);
+  --popover: oklch(0.15 0.018 255);
+  --popover-foreground: oklch(0.95 0.012 225);
+  --panel: oklch(0.15 0.018 255);
+  --primary: oklch(0.82 0.15 194);
+  --primary-foreground: oklch(0.14 0.02 255);
+  --secondary: oklch(0.2 0.022 255);
+  --secondary-foreground: oklch(0.95 0.012 225);
+  --muted: oklch(0.2 0.022 255);
+  --muted-foreground: oklch(0.7 0.025 225);
+  --dim: oklch(0.58 0.025 225);
+  --accent: oklch(0.68 0.23 347);
+  --accent-foreground: oklch(0.99 0.01 340);
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.26 0.025 255);
+  --input: oklch(0.26 0.025 255);
+  --ring: oklch(0.82 0.15 194);
+  --grid-line: oklch(0.24 0.023 230);
+  --glow-primary: 0 24px 90px -48px color-mix(in oklab, var(--primary) 55%, transparent);
+  --glow-accent: 0 24px 90px -48px color-mix(in oklab, var(--accent) 48%, transparent);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    position: relative;
+    min-height: 100dvh;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    background-image:
+      radial-gradient(
+        ellipse at 82% 5%,
+        color-mix(in oklab, var(--primary) 8%, transparent),
+        transparent 33rem
+      ),
+      radial-gradient(
+        ellipse at 4% 44%,
+        color-mix(in oklab, var(--accent) 5%, transparent),
+        transparent 30rem
+      );
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 34%, transparent);
+    color: var(--foreground);
+  }
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 4px;
+  }
+}
+
+@utility tech-grid {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 68px 68px;
+  mask-image: radial-gradient(ellipse at center, black, transparent 78%);
+}
+@utility top-glow {
+  background:
+    radial-gradient(
+      ellipse at 70% -20%,
+      color-mix(in oklab, var(--primary) 12%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at 25% 0%,
+      color-mix(in oklab, var(--accent) 8%, transparent),
+      transparent 55%
+    );
+}
+@utility glow-primary {
+  box-shadow: var(--glow-primary);
+}
+@utility glow-accent {
+  box-shadow: var(--glow-accent);
+}
+@utility eyebrow {
+  font-family: var(--font-display);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: color-mix(in oklab, var(--primary) 80%, transparent);
+}
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.875rem 1.75rem;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 0.25s,
+    box-shadow 0.25s;
+  box-shadow: 0 8px 24px -14px color-mix(in oklab, var(--primary) 78%, transparent);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px -14px color-mix(in oklab, var(--primary) 78%, transparent);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
+@utility btn-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.875rem 1.75rem;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.25s;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px -14px color-mix(in oklab, var(--accent) 76%, transparent);
+  }
+}
+@utility btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.875rem 1.5rem;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  transition:
+    border-color 0.25s,
+    color 0.25s,
+    background-color 0.25s,
+    transform 0.25s;
+  &:hover {
+    border-color: color-mix(in oklab, var(--primary) 60%, transparent);
+    color: var(--primary);
+    transform: translateY(-2px);
+    background-color: color-mix(in oklab, var(--primary) 5%, transparent);
+  }
+}
+@utility field {
+  width: 100%;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 15px;
+  outline: none;
+  &:focus {
+    border-color: var(--primary);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+@utility pulse-dot {
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes orbit-drift {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes image-arrive {
+  from {
+    opacity: 0;
+    transform: scale(1.045);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.enter {
+  animation: rise-in 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.enter-delay-1 {
+  animation-delay: 0.12s;
+}
+.enter-delay-2 {
+  animation-delay: 0.24s;
+}
+.enter-delay-3 {
+  animation-delay: 0.36s;
+}
+.scroll-reveal {
+  animation: rise-in 0.7s both;
+}
+.nuclear-visual {
+  isolation: isolate;
+  background: #091522;
+}
+.nuclear-visual::before,
+.nuclear-visual::after {
+  position: absolute;
+  z-index: 1;
+  content: "";
+  pointer-events: none;
+  border: 1px solid color-mix(in oklab, var(--primary) 40%, transparent);
+  border-radius: 50%;
+}
+.nuclear-visual::before {
+  inset: 11% -16%;
+  transform: rotate(-24deg);
+  animation: orbit-drift 34s linear infinite;
+}
+.nuclear-visual::after {
+  inset: 2% -21%;
+  transform: rotate(36deg);
+  border-color: color-mix(in oklab, var(--accent) 27%, transparent);
+  animation: orbit-drift 48s linear infinite reverse;
+}
+.nuclear-visual img {
+  animation: image-arrive 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.course-art img {
+  transition:
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 0.5s;
+}
+.course-art:hover img {
+  transform: scale(1.055);
+  filter: saturate(1.12);
+}
+.course-card {
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 0.3s,
+    background-color 0.3s;
+}
+.course-card:hover {
+  transform: translateY(-5px);
+  border-color: color-mix(in oklab, var(--primary) 52%, var(--border));
+  background-color: color-mix(in oklab, var(--panel) 86%, var(--primary));
+}
+.course-listing {
+  transition:
+    border-color 0.3s,
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.course-listing:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in oklab, var(--primary) 48%, var(--border));
+}
+.course-listing:hover .course-art img {
+  transform: scale(1.04);
+}
+
+.tap-glow {
+  position: fixed;
+  z-index: 100;
+  top: var(--tap-y);
+  left: var(--tap-x);
+  width: 6rem;
+  height: 6rem;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--primary) 55%, transparent) 0%,
+    color-mix(in oklab, var(--accent) 26%, transparent) 30%,
+    transparent 72%
+  );
+  animation: tap-glow 850ms ease-out forwards;
+}
+
+@keyframes tap-glow {
+  from {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0.18);
+    filter: blur(1px);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.5);
+    filter: blur(14px);
+  }
+}
+
+.dashboard-panel {
+  border: 1px solid color-mix(in oklab, var(--primary) 23%, var(--border));
+  background:
+    radial-gradient(ellipse at 90% 0%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 58%),
+    color-mix(in oklab, var(--panel) 92%, transparent);
+}
+
+.dashboard-card {
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--panel) 80%, transparent);
+  transition:
+    border-color 220ms ease,
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--primary) 48%, var(--border));
+  box-shadow: var(--glow-primary);
+}
+
+@supports (animation-timeline: view()) {
+  .scroll-reveal {
+    animation-name: rise-in;
+    animation-timeline: view();
+    animation-range: entry 0% entry 30%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .scroll-reveal {
+    animation: none !important;
+  }
+  .tap-glow {
+    display: none !important;
+  }
+}
