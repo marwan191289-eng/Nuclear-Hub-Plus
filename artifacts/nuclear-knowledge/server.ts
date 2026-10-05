@@ -4,7 +4,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  randomUUID,
+  scrypt,
+  timingSafeEqual,
+} from "node:crypto";
 
 dotenv.config();
 
@@ -27,6 +34,7 @@ const API_PREFIX =
 
 const ADMIN_SESSION_COOKIE = "nuclear_admin_session";
 const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const ROOT_ADMIN_SUBJECT = "root-admin";
 const STUDENT_COUNTER_EPOCH = Date.UTC(2026, 9, 5, 0, 0, 0);
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -143,39 +151,51 @@ function getAuthConfig() {
   return { password, sessionSecret };
 }
 
-function isAdminSessionValid(req: Request): boolean {
-  const config = getAuthConfig();
+function getSessionSecret(): string | null {
+  const secret = process.env.SESSION_SECRET;
+  return secret && Buffer.byteLength(secret) >= 32 ? secret : null;
+}
+
+type SignedSession = { sub: string; exp: number };
+
+function readSignedSession(req: Request): SignedSession | null {
+  const sessionSecret = getSessionSecret();
   const token = getRequestCookie(req, ADMIN_SESSION_COOKIE);
-  if (!config || !token) return false;
+  if (!sessionSecret || !token) return null;
 
   const [payload, signature] = token.split(".");
-  if (!payload || !signature) return false;
+  if (!payload || !signature) return null;
 
-  const expectedSignature = createHmac("sha256", config.sessionSecret)
+  const expectedSignature = createHmac("sha256", sessionSecret)
     .update(payload)
     .digest("base64url");
   const actual = Buffer.from(signature);
   const expected = Buffer.from(expectedSignature);
   if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
-    return false;
+    return null;
   }
 
   try {
-    const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    return typeof session.exp === "number" && session.exp > Date.now();
+    const session = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8"),
+    ) as Partial<SignedSession>;
+    return typeof session.sub === "string" &&
+      typeof session.exp === "number" &&
+      session.exp > Date.now()
+      ? { sub: session.sub, exp: session.exp }
+      : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function setAdminSessionCookie(res: Response): void {
-  const config = getAuthConfig();
-  if (!config) return;
-
+function setSessionCookie(res: Response, subject: string): void {
+  const sessionSecret = getSessionSecret();
+  if (!sessionSecret) return;
   const payload = Buffer.from(
-    JSON.stringify({ exp: Date.now() + ADMIN_SESSION_TTL_MS }),
+    JSON.stringify({ sub: subject, exp: Date.now() + ADMIN_SESSION_TTL_MS }),
   ).toString("base64url");
-  const signature = createHmac("sha256", config.sessionSecret)
+  const signature = createHmac("sha256", sessionSecret)
     .update(payload)
     .digest("base64url");
   const secure = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
@@ -185,12 +205,108 @@ function setAdminSessionCookie(res: Response): void {
   );
 }
 
+function setAdminSessionCookie(res: Response): void {
+  setSessionCookie(res, ROOT_ADMIN_SUBJECT);
+}
+
 function clearAdminSessionCookie(res: Response): void {
   const secure = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
   res.setHeader(
     "Set-Cookie",
     `${ADMIN_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secure ? "; Secure" : ""}`,
   );
+}
+
+type PublicUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "instructor" | "student" | "parent";
+  createdAt?: string;
+};
+
+type UserRow = {
+  id: string;
+  name: string;
+  email: string;
+  password_hash: string;
+  role: string;
+  disabled: boolean;
+  created_at: Date | string;
+};
+
+async function getUserPool() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Database is not configured.");
+  }
+  const { pool } = await import("@workspace/db");
+  return pool;
+}
+
+function normalizeUser(row: UserRow): PublicUser | null {
+  if (!["admin", "instructor", "student", "parent"].includes(row.role)) {
+    return null;
+  }
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    role: row.role as PublicUser["role"],
+    createdAt: new Date(row.created_at).toISOString(),
+  };
+}
+
+async function getAuthenticatedUser(req: Request): Promise<PublicUser | null> {
+  const session = readSignedSession(req);
+  if (!session) return null;
+  if (session.sub === ROOT_ADMIN_SUBJECT) {
+    if (!getAuthConfig()) return null;
+    return {
+      id: ROOT_ADMIN_SUBJECT,
+      name: "المهندس — مدير النظام",
+      email: "",
+      role: "admin",
+    };
+  }
+
+  const pool = await getUserPool();
+  const result = await pool.query<UserRow>(
+    `SELECT id, name, email, password_hash, role, disabled, created_at
+       FROM nuclear_hub_users
+      WHERE id = $1 AND disabled = false
+      LIMIT 1`,
+    [session.sub],
+  );
+  return result.rows[0] ? normalizeUser(result.rows[0]) : null;
+}
+
+function derivePassword(password: string, salt: Buffer): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    scrypt(password, salt, 64, (error, derivedKey) => {
+      if (error) reject(error);
+      else resolve(derivedKey);
+    });
+  });
+}
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16);
+  const key = await derivePassword(password, salt);
+  return `${salt.toString("hex")}:${key.toString("hex")}`;
+}
+
+async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  const [saltHex, keyHex] = storedHash.split(":");
+  if (!/^[\da-f]{32}$/.test(saltHex ?? "") || !/^[\da-f]{128}$/.test(keyHex ?? "")) {
+    return false;
+  }
+  const expected = Buffer.from(keyHex, "hex");
+  const supplied = await derivePassword(password, Buffer.from(saltHex, "hex"));
+  return expected.length === supplied.length && timingSafeEqual(expected, supplied);
+}
+
+function setPrivateNoStore(res: Response): void {
+  res.setHeader("Cache-Control", "private, no-store");
 }
 
 const failedLoginAttempts = new Map<
@@ -229,29 +345,160 @@ function recordFailedLogin(ip: string) {
   current.count += 1;
 }
 
-function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  res.setHeader("Cache-Control", "private, no-store");
-  if (!getAuthConfig()) {
-    res.status(503).json({ error: "Admin authentication is not configured." });
+const registrationAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function registrationRateLimit(req: Request, res: Response, next: NextFunction) {
+  const ip = req.ip || req.socket.remoteAddress || "unknown";
+  const now = Date.now();
+  const current = registrationAttempts.get(ip);
+  if (!current || current.resetAt <= now) {
+    registrationAttempts.set(ip, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    next();
     return;
   }
-  if (!isAdminSessionValid(req)) {
-    res.status(401).json({ error: "Admin authentication required." });
+  if (current.count >= 8) {
+    res.setHeader("Retry-After", Math.max(1, Math.ceil((current.resetAt - now) / 1000)));
+    res.status(429).json({ error: "Too many new accounts from this connection. Try again later." });
     return;
   }
+  current.count += 1;
   next();
 }
 
-app.get(`${API_PREFIX}/admin/session`, (req, res) => {
-  if (!getAuthConfig()) {
-    res.status(503).json({ error: "Admin authentication is not configured." });
+function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  setPrivateNoStore(res);
+  void getAuthenticatedUser(req)
+    .then((user) => {
+      if (!user) {
+        res.status(401).json({ error: "Authentication required." });
+        return;
+      }
+      if (user.role !== "admin") {
+        res.status(403).json({ error: "Administrator permission required." });
+        return;
+      }
+      res.locals.authenticatedUser = user;
+      next();
+    })
+    .catch(() => {
+      res.status(503).json({ error: "Authentication storage is unavailable." });
+    });
+}
+
+app.get(`${API_PREFIX}/auth/me`, async (req, res) => {
+  setPrivateNoStore(res);
+  try {
+    res.json({ user: await getAuthenticatedUser(req) });
+  } catch {
+    res.status(503).json({ error: "Account storage is unavailable." });
+  }
+});
+
+app.post(`${API_PREFIX}/auth/register`, registrationRateLimit, async (req, res) => {
+  setPrivateNoStore(res);
+  const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+  const email =
+    typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
+  if (name.length < 2 || name.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+    res.status(400).json({ error: "Enter a valid name and email address." });
     return;
   }
-  res.setHeader("Cache-Control", "private, no-store");
-  res.json({ authenticated: isAdminSessionValid(req) });
+  if (password.length < 12 || password.length > 128) {
+    res.status(400).json({ error: "Password must be between 12 and 128 characters." });
+    return;
+  }
+
+  try {
+    const pool = await getUserPool();
+    const id = randomUUID();
+    const passwordHash = await hashPassword(password);
+    const result = await pool.query<UserRow>(
+      `INSERT INTO nuclear_hub_users (id, name, email, password_hash, role)
+       VALUES ($1, $2, $3, $4, 'student')
+       ON CONFLICT (email) DO NOTHING
+       RETURNING id, name, email, password_hash, role, disabled, created_at`,
+      [id, name, email, passwordHash],
+    );
+    if (!result.rows[0]) {
+      res.status(409).json({ error: "An account with this email already exists." });
+      return;
+    }
+    const user = normalizeUser(result.rows[0]);
+    if (!user) {
+      res.status(500).json({ error: "Could not create this account." });
+      return;
+    }
+    setSessionCookie(res, user.id);
+    res.status(201).json({ user });
+  } catch {
+    res.status(503).json({ error: "Account storage is unavailable." });
+  }
+});
+
+app.post(`${API_PREFIX}/auth/login`, loginRateLimit, async (req, res) => {
+  setPrivateNoStore(res);
+  const email =
+    typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 1 || password.length > 128) {
+    res.status(400).json({ error: "Enter a valid email and password." });
+    return;
+  }
+
+  const ip = req.ip || req.socket.remoteAddress || "unknown";
+  try {
+    const pool = await getUserPool();
+    const result = await pool.query<UserRow>(
+      `SELECT id, name, email, password_hash, role, disabled, created_at
+         FROM nuclear_hub_users
+        WHERE email = $1
+        LIMIT 1`,
+      [email],
+    );
+    const row = result.rows[0];
+    const passwordMatches = row
+      ? await verifyPassword(password, row.password_hash)
+      : await verifyPassword(
+          password,
+          "00000000000000000000000000000000:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        );
+    if (!row || row.disabled || !passwordMatches) {
+      recordFailedLogin(ip);
+      res.status(401).json({ error: "Email or password is incorrect." });
+      return;
+    }
+    const user = normalizeUser(row);
+    if (!user) {
+      res.status(403).json({ error: "This account has no valid role." });
+      return;
+    }
+    failedLoginAttempts.delete(ip);
+    setSessionCookie(res, user.id);
+    res.json({ user });
+  } catch {
+    res.status(503).json({ error: "Account storage is unavailable." });
+  }
+});
+
+app.post(`${API_PREFIX}/auth/logout`, (_req, res) => {
+  setPrivateNoStore(res);
+  clearAdminSessionCookie(res);
+  res.status(204).end();
+});
+
+app.get(`${API_PREFIX}/admin/session`, async (req, res) => {
+  setPrivateNoStore(res);
+  try {
+    const user = await getAuthenticatedUser(req);
+    res.json({ authenticated: user?.role === "admin", user });
+  } catch {
+    res.status(503).json({ error: "Authentication storage is unavailable." });
+  }
 });
 
 app.post(`${API_PREFIX}/admin/login`, loginRateLimit, (req, res) => {
+  setPrivateNoStore(res);
   const config = getAuthConfig();
   if (!config) {
     res.status(503).json({ error: "Admin authentication is not configured." });
@@ -274,18 +521,84 @@ app.post(`${API_PREFIX}/admin/login`, loginRateLimit, (req, res) => {
 
   failedLoginAttempts.delete(req.ip || req.socket.remoteAddress || "unknown");
   setAdminSessionCookie(res);
-  res.setHeader("Cache-Control", "private, no-store");
-  res.json({ authenticated: true });
+  setPrivateNoStore(res);
+  res.json({
+    authenticated: true,
+    user: {
+      id: ROOT_ADMIN_SUBJECT,
+      name: "المهندس — مدير النظام",
+      email: "",
+      role: "admin",
+    },
+  });
 });
 
 app.post(`${API_PREFIX}/admin/logout`, (_req, res) => {
-  res.setHeader("Cache-Control", "private, no-store");
+  setPrivateNoStore(res);
   clearAdminSessionCookie(res);
   res.status(204).end();
 });
 
 app.get(`${API_PREFIX}/admin/students`, requireAdmin, (_req, res) => {
   res.json(ADMIN_STUDENTS);
+});
+
+app.get(`${API_PREFIX}/admin/users`, requireAdmin, async (_req, res) => {
+  try {
+    const pool = await getUserPool();
+    const result = await pool.query<UserRow>(
+      `SELECT id, name, email, password_hash, role, disabled, created_at
+         FROM nuclear_hub_users
+        ORDER BY created_at DESC`,
+    );
+    res.json(
+      result.rows.flatMap((row) => {
+        const user = normalizeUser(row);
+        return user ? [{ ...user, disabled: row.disabled }] : [];
+      }),
+    );
+  } catch {
+    res.status(503).json({ error: "Account storage is unavailable." });
+  }
+});
+
+app.patch(`${API_PREFIX}/admin/users/:userId/role`, requireAdmin, async (req, res) => {
+  const role = req.body?.role;
+  if (!["admin", "instructor", "student", "parent"].includes(role)) {
+    res.status(400).json({ error: "A valid account role is required." });
+    return;
+  }
+  const actor = res.locals.authenticatedUser as PublicUser;
+  if (role === "admin" && actor.id !== ROOT_ADMIN_SUBJECT) {
+    res.status(403).json({ error: "Only the system engineer can grant administrator access." });
+    return;
+  }
+  if (actor.id === req.params.userId && actor.id !== ROOT_ADMIN_SUBJECT && role !== "admin") {
+    res.status(400).json({ error: "Administrators cannot change their own role." });
+    return;
+  }
+  try {
+    const pool = await getUserPool();
+    const result = await pool.query<UserRow>(
+      `UPDATE nuclear_hub_users
+          SET role = $1, updated_at = now()
+        WHERE id = $2
+        RETURNING id, name, email, password_hash, role, disabled, created_at`,
+      [role, req.params.userId],
+    );
+    if (!result.rows[0]) {
+      res.status(404).json({ error: "Account not found." });
+      return;
+    }
+    const user = normalizeUser(result.rows[0]);
+    if (!user) {
+      res.status(500).json({ error: "Could not update this account." });
+      return;
+    }
+    res.json({ user });
+  } catch {
+    res.status(503).json({ error: "Account storage is unavailable." });
+  }
 });
 
 app.get(`${API_PREFIX}/admin/parent-report`, requireAdmin, (_req, res) => {

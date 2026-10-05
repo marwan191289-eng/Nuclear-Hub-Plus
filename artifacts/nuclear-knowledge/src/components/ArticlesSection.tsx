@@ -127,17 +127,18 @@ export function ArticlesSection({ language }: ArticlesSectionProps) {
   }, [selectedArticle]);
 
   return (
-    <section className="py-16 px-6 lg:px-10 max-w-[1240px] mx-auto space-y-10">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-5">
+    <section className="py-16 px-6 lg:px-10 max-w-[1240px] mx-auto space-y-9">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
-          <span className="text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-widest block mb-1">
+          <span className="text-[11px] font-mono text-cyan-400 font-bold uppercase tracking-widest block mb-2">
             {isEn ? "FREE KNOWLEDGE HUB" : "بنك المعرفة والملخصات المجانية"}
           </span>
-          <h2 className="text-3xl font-black text-white">
+          <h2 className="text-3xl sm:text-4xl font-black text-white">
             {isEn ? "Articles & Solved Exam Guides" : "مقالات وملخصات علمية مركزة"}
           </h2>
         </div>
-        <div className="text-xs text-slate-400">
+        <div className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/50 px-3 py-2 text-xs text-slate-400">
+          <BookOpen className="size-3.5 text-cyan-400" />
           {isEn ? "Prepared under the guidance of Eng. Mahmoud Ismail Shaltoot" : "إعداد وإشراف المهندس/ محمود إسماعيل شلتوت"}
         </div>
       </div>
@@ -149,7 +150,7 @@ export function ArticlesSection({ language }: ArticlesSectionProps) {
           return (
           <div
             key={article.id}
-            className="rounded-3xl border border-slate-800 bg-[#070d19] p-6 flex flex-col justify-between space-y-4 hover:border-cyan-500/40 transition-all hover:shadow-[0_0_40px_rgba(0,240,255,0.12)] group"
+            className="rounded-2xl border border-slate-800 bg-[#070d19] p-5 sm:p-6 flex flex-col justify-between space-y-5 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/40 hover:shadow-[0_0_40px_rgba(0,240,255,0.12)] group"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs text-slate-400">
@@ -193,7 +194,7 @@ export function ArticlesSection({ language }: ArticlesSectionProps) {
                     setShareNotice(isEn ? "Sharing is unavailable in this browser." : "المشاركة غير متاحة في هذا المتصفح.");
                   }
                 }}
-                className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white cursor-pointer"
+                className="p-2 rounded-lg border border-slate-800 text-slate-400 hover:text-white cursor-pointer transition-colors"
                 title={isEn ? "Share article" : "مشاركة المقال"}
                 aria-label={isEn ? "Share article" : "مشاركة المقال"}
               >
@@ -209,8 +210,17 @@ export function ArticlesSection({ language }: ArticlesSectionProps) {
 
       {/* Article Detail Modal */}
       {selectedArticle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div role="dialog" aria-modal="true" aria-labelledby="article-dialog-title" className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl border border-cyan-500/30 bg-[#070d1a] shadow-2xl overflow-hidden">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          onClick={() => setSelectedArticle(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="article-dialog-title"
+            className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-cyan-500/30 bg-[#070d1a] shadow-2xl overflow-hidden"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-slate-800 bg-[#081022] px-6 py-4">
               <div className="flex items-center gap-2 text-xs font-mono text-cyan-400">
                 <BookOpen className="size-4" />

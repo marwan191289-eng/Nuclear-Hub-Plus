@@ -10,13 +10,13 @@ export function Footer({ onTabChange, language }: FooterProps) {
   const isEn = language === "en";
 
   return (
-    <footer className="border-t border-slate-800/80 bg-[#03060f] text-slate-400 py-14 px-6 lg:px-10">
-      <div className="max-w-[1240px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
+    <footer className="border-t border-slate-800/80 bg-[#03060f] text-slate-400 py-12 sm:py-14 px-5 sm:px-6 lg:px-10">
+      <div className="max-w-[1240px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-10 gap-y-9">
         {/* Brand */}
-        <div className="space-y-4 md:col-span-2">
+        <div className="space-y-4 sm:col-span-2 md:col-span-2">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-cyan-950 border border-cyan-500/40 text-cyan-300">
-              <Atom className="size-6 text-[#00f0ff] animate-spin-slow" />
+              <Atom className="size-6 text-[#00f0ff]" />
             </div>
             <div>
               <div className="text-base font-extrabold text-white">{isEn ? "Eng. Mahmoud Shaltoot" : "المهندس محمود شلتوت"}</div>
@@ -35,6 +35,7 @@ export function Footer({ onTabChange, language }: FooterProps) {
               href="https://wa.me/966594756878"
               target="_blank"
               rel="noreferrer"
+              aria-label={isEn ? "Contact us on WhatsApp" : "تواصل معنا عبر واتساب"}
               className="flex size-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-emerald-400 hover:border-emerald-500/40 transition-all"
                title={isEn ? "WhatsApp" : "واتساب مباشر"}
             >
@@ -42,6 +43,7 @@ export function Footer({ onTabChange, language }: FooterProps) {
             </a>
             <a
               href="mailto:Mahmoudshaltoot.cemc@gmail.com"
+              aria-label={isEn ? "Send an email" : "إرسال بريد إلكتروني"}
               className="flex size-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-cyan-400 hover:border-cyan-500/40 transition-all"
                title={isEn ? "Email" : "البريد الإلكتروني"}
             >
@@ -49,6 +51,7 @@ export function Footer({ onTabChange, language }: FooterProps) {
             </a>
             <a
               href="tel:+966594756878"
+              aria-label={isEn ? "Call the instructor" : "اتصل بالمدرب"}
               className="flex size-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-pink-400 hover:border-pink-500/40 transition-all"
                title={isEn ? "Call" : "اتصال هاتفي"}
             >
@@ -127,7 +130,7 @@ export function Footer({ onTabChange, language }: FooterProps) {
         </div>
       </div>
 
-      <div className="max-w-[1240px] mx-auto mt-12 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+      <div className="max-w-[1240px] mx-auto mt-10 sm:mt-12 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[11px] text-slate-500">
         <div>
           {isEn ? `© ${new Date().getFullYear()} Eng. Mahmoud Ismail Shaltoot — Nuclear Chemistry Hub.` : `جميع الحقوق محفوظة © ${new Date().getFullYear()} للمهندس محمود إسماعيل شلتوت — منصة الكيمياء النووية.`}
         </div>

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import { after, before, describe, it } from "node:test";
 
@@ -9,6 +10,7 @@ process.env.SESSION_SECRET = "test-only-session-signing-key-with-more-than-32-by
 const { app, calculateRealisticStudentCount } = await import("../server");
 const server = createServer(app);
 let baseUrl = "";
+const testEmails: string[] = [];
 
 before(async () => {
   await new Promise<void>((resolve, reject) => {
@@ -24,6 +26,11 @@ after(async () => {
   await new Promise<void>((resolve, reject) => {
     server.close((error) => (error ? reject(error) : resolve()));
   });
+  if (testEmails.length) {
+    const { pool } = await import("@workspace/db");
+    await pool.query("DELETE FROM nuclear_hub_users WHERE email = ANY($1::text[])", [testEmails]);
+    await pool.end();
+  }
 });
 
 describe("administrator authentication", () => {
@@ -50,7 +57,13 @@ describe("administrator authentication", () => {
       body: JSON.stringify({ password: process.env.ADMIN_PASSWORD }),
     });
     assert.equal(login.status, 200);
-    assert.deepEqual(await login.json(), { authenticated: true });
+    const loginData = await login.json() as {
+      authenticated: boolean;
+      user: { id: string; role: string };
+    };
+    assert.equal(loginData.authenticated, true);
+    assert.equal(loginData.user.id, "root-admin");
+    assert.equal(loginData.user.role, "admin");
 
     const setCookie = login.headers.get("set-cookie");
     assert.ok(setCookie);
@@ -79,15 +92,104 @@ describe("administrator authentication", () => {
     assert.match(logout.headers.get("set-cookie") ?? "", /Max-Age=0/);
   });
 
-  it("fails closed when the admin password is not configured", async () => {
+  it("reports no administrator session when the root password is not configured", async () => {
     const configuredPassword = process.env.ADMIN_PASSWORD;
     delete process.env.ADMIN_PASSWORD;
     try {
       const response = await fetch(`${baseUrl}/api/admin/session`);
-      assert.equal(response.status, 503);
+      assert.equal(response.status, 200);
+      assert.equal((await response.json() as { authenticated: boolean }).authenticated, false);
     } finally {
       process.env.ADMIN_PASSWORD = configuredPassword;
     }
+  });
+});
+
+describe("registered accounts and role permissions", () => {
+  it("creates student-only accounts and enforces server-owned role changes", async () => {
+    const firstEmail = `test-${randomUUID()}@example.test`;
+    const secondEmail = `test-${randomUUID()}@example.test`;
+    testEmails.push(firstEmail, secondEmail);
+    const password = "safe-test-password-123";
+
+    const registerAccount = async (email: string, name: string) => fetch(`${baseUrl}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password, role: "admin" }),
+    });
+
+    const registration = await registerAccount(firstEmail, "Test Student");
+    assert.equal(registration.status, 201);
+    const created = await registration.json() as { user: { id: string; role: string; email: string } };
+    assert.equal(created.user.role, "student");
+    assert.equal(created.user.email, firstEmail);
+    assert.equal(JSON.stringify(created).includes("password"), false);
+    const studentCookie = registration.headers.get("set-cookie")?.split(";")[0];
+    assert.ok(studentCookie);
+
+    const duplicate = await registerAccount(firstEmail, "Test Student");
+    assert.equal(duplicate.status, 409);
+    const secondRegistration = await registerAccount(secondEmail, "Second Test Student");
+    assert.equal(secondRegistration.status, 201);
+
+    const failedLogin = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: firstEmail, password: "wrong-test-password" }),
+    });
+    assert.equal(failedLogin.status, 401);
+
+    const accountLogin = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: firstEmail, password }),
+    });
+    assert.equal(accountLogin.status, 200);
+    const signedInCookie = accountLogin.headers.get("set-cookie")?.split(";")[0];
+    assert.ok(signedInCookie);
+    const me = await fetch(`${baseUrl}/api/auth/me`, { headers: { Cookie: signedInCookie } });
+    assert.equal((await me.json() as { user: { id: string } }).user.id, created.user.id);
+    const denied = await fetch(`${baseUrl}/api/admin/users`, { headers: { Cookie: studentCookie } });
+    assert.equal(denied.status, 403);
+
+    const rootLogin = await fetch(`${baseUrl}/api/admin/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: process.env.ADMIN_PASSWORD }),
+    });
+    const rootCookie = rootLogin.headers.get("set-cookie")?.split(";")[0];
+    assert.equal(rootLogin.status, 200);
+    assert.ok(rootCookie);
+
+    const rootPromote = await fetch(`${baseUrl}/api/admin/users/${created.user.id}/role`, {
+      method: "PATCH",
+      headers: { Cookie: rootCookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "admin" }),
+    });
+    assert.equal(rootPromote.status, 200);
+    const promotedSession = await fetch(`${baseUrl}/api/admin/session`, {
+      headers: { Cookie: studentCookie },
+    });
+    assert.equal((await promotedSession.json() as { authenticated: boolean }).authenticated, true);
+
+    const secondUser = await secondRegistration.json() as { user: { id: string } };
+    const peerPromotion = await fetch(`${baseUrl}/api/admin/users/${secondUser.user.id}/role`, {
+      method: "PATCH",
+      headers: { Cookie: studentCookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "admin" }),
+    });
+    assert.equal(peerPromotion.status, 403);
+
+    const adminList = await fetch(`${baseUrl}/api/admin/users`, { headers: { Cookie: studentCookie } });
+    assert.equal(adminList.status, 200);
+    const accounts = await adminList.json() as Array<{ email: string; role: string }>;
+    assert.equal(accounts.find((account) => account.email === firstEmail)?.role, "admin");
+
+    const logout = await fetch(`${baseUrl}/api/auth/logout`, {
+      method: "POST",
+      headers: { Cookie: studentCookie },
+    });
+    assert.equal(logout.status, 204);
   });
 });
 

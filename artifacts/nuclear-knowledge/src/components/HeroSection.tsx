@@ -20,17 +20,17 @@ export function HeroSection({
   const isEn = language === "en";
 
   return (
-    <div className="relative overflow-hidden bg-[#030712] pt-8 pb-16 lg:pt-14 lg:pb-24">
+    <div className="relative overflow-hidden bg-[var(--bg-main)] pt-8 pb-16 lg:pt-14 lg:pb-24">
       {/* Subtle blueprint grid overlay */}
       <div className="absolute inset-0 bg-grid-nuclear pointer-events-none opacity-80" />
 
       {/* Atmospheric ambient glows */}
-      <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/3 -left-40 w-[550px] h-[550px] bg-pink-500/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] rounded-full bg-[#9bbba7]/10 blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/3 -left-40 w-[550px] h-[550px] rounded-full bg-[#c89878]/8 blur-[140px] pointer-events-none" />
 
       {/* Live enrollment toast banner */}
       {notification && (
-        <div className="relative z-30 mx-auto max-w-xl px-4 mb-6 transition-all duration-500 animate-bounce">
+        <div className="relative z-30 mx-auto max-w-xl px-4 mb-6 transition-all duration-500 animate-in">
           <div className="flex items-center gap-3 rounded-full border border-cyan-500/40 bg-[#071322]/90 backdrop-blur-md px-4 py-2 text-xs text-cyan-300 shadow-[0_0_20px_rgba(0,240,255,0.25)]">
             <span className="size-2 rounded-full bg-cyan-400 pulse-dot" />
             <span className="font-medium">{notification}</span>
@@ -58,7 +58,12 @@ export function HeroSection({
               </div>
 
               {/* Reactor Core Visual Container */}
-              <div className="relative group cursor-pointer" onClick={onOpenSimulator}>
+              <button
+                type="button"
+                className="relative block w-full text-start group cursor-pointer focus-visible:outline-offset-[-4px]"
+                onClick={onOpenSimulator}
+                aria-label={isEn ? "Open the reactor simulator" : "افتح محاكي المفاعل"}
+              >
                 {/* U 235 Badge inside image at top right */}
                 <div
                   className="absolute top-3 right-4 z-20 rounded border border-cyan-400/40 bg-black/60 px-2.5 py-0.5 font-mono text-[11px] font-bold text-[#00f0ff] backdrop-blur-md"
@@ -70,7 +75,7 @@ export function HeroSection({
                 {/* Neon Reactor Core Image cropped directly from user attachment */}
                 <img
                   src={reactorNeonImg}
-                  alt="قلب المفاعل النووي المضاء بالأزرق والوردي"
+                  alt={isEn ? "Illustration of a reactor core" : "تصوير توضيحي لقلب مفاعل نووي"}
                   className="aspect-[4/4.8] w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
 
@@ -85,7 +90,7 @@ export function HeroSection({
                     {isEn ? "Open Lab →" : "افتح المختبر ←"}
                   </span>
                 </div>
-              </div>
+              </button>
             </div>
           </div>
 
@@ -96,8 +101,8 @@ export function HeroSection({
               <span className="size-2 rounded-full bg-cyan-400 pulse-dot shadow-[0_0_8px_#00f0ff]" />
               <span className="font-semibold tracking-wide">
                 {isEn
-                  ? "Available Now • Registration Open for New Cohort"
-                  : "متاحة الآن • التسجيل مفتوح للدفعة الجديدة"}
+                  ? "Guided by Eng. Mahmoud • Arabic & English"
+                  : "بإشراف المهندس محمود • محتوى عربي وإنجليزي"}
               </span>
             </div>
 

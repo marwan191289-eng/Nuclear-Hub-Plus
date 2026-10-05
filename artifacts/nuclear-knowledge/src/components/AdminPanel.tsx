@@ -5,7 +5,7 @@ import { AlertCircle, BookOpen, Eye, EyeOff, GraduationCap, Languages, LockKeyho
 
 interface AdminPanelProps {
   currentUser: UserProfile;
-  onRoleSwitch: (role: Role) => void;
+  onRoleSwitch: (role: Role, identity?: Partial<Pick<UserProfile, "id" | "name" | "email">>) => void;
   language: "ar" | "en";
 }
 interface StudentRecord {
@@ -34,10 +34,18 @@ interface ParentReport {
   remarks: string;
   recommendations: string[];
 }
+interface ManagedAccount {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  disabled: boolean;
+  createdAt?: string;
+}
 
 const copy = {
   ar: {
-    title: "إدارة المنصة", eyebrow: "إدارة أكاديمية آمنة", intro: "مساحة تشغيلية للمشرفين المعتمدين. بيانات الطلاب لا تظهر إلا بعد التحقق من جلسة الخادم.",
+    title: "إدارة المنصة", eyebrow: "إدارة أكاديمية آمنة", intro: "مساحة تشغيلية للمشرفين المعتمدين. بيانات الإدارة والصلاحيات محمية بجلسة موثقة من الخادم.",
     loginTitle: "تسجيل دخول المشرف", login: "كلمة المرور", unlock: "متابعة آمنة", locked: "التحقق من حالة الجلسة…", checking: "جارٍ التحقق من جلسة الإدارة",
     loginError: "تعذر تسجيل الدخول. تحقق من كلمة المرور وحاول مجدداً.", sessionError: "تعذر التحقق من جلسة الإدارة. أعد المحاولة.",
     signout: "تسجيل الخروج", overview: "نظرة عامة", students: "سجل الطلاب", future: "هذه المساحة غير متاحة حالياً",
@@ -45,8 +53,12 @@ const copy = {
     search: "ابحث بالاسم أو البريد أو المقرر", name: "الطالب", course: "المقرر", progress: "التقدم", attendance: "الحضور", score: "متوسط الاختبارات", status: "الحالة",
     empty: "لا توجد سجلات طلاب لعرضها.", statsError: "تعذر تحميل الإحصاءات.", studentsError: "تعذر تحميل سجل الطلاب.",
     studentsCount: "تقدير عدد المتعلمين", coursesCount: "المقررات المتاحة", languages: "لغات المنصة", experience: "سنوات الخبرة",
-    roleNotice: "تبديل الدور هنا للمعاينة فقط ولا يمنح صلاحيات الخادم.", retry: "إعادة المحاولة", show: "إظهار كلمة المرور", hide: "إخفاء كلمة المرور",
-    loading: "جارٍ تحميل بيانات الطلاب…", noMatch: "لا توجد نتائج مطابقة."
+    roleNotice: "التسجيل العام ينشئ حساب طالب فقط. يمنح المهندس صلاحية الإدارة، ويمكن للمشرفين إدارة أدوار الفريق من سجل الحسابات.", retry: "إعادة المحاولة", show: "إظهار كلمة المرور", hide: "إخفاء كلمة المرور",
+    loading: "جارٍ تحميل بيانات الطلاب…", noMatch: "لا توجد نتائج مطابقة.",
+    accounts: "الحسابات والصلاحيات", accountIntro: "حسابات مسجلة فعلياً في المنصة. يراجع المهندس والمشرف صلاحيات الفريق هنا.",
+    role: "الدور", created: "تاريخ التسجيل", roleSaved: "تم تحديث الصلاحية.", roleError: "تعذر تحديث الصلاحية.", accountEmpty: "لا توجد حسابات مسجلة بعد.",
+    accountsError: "تعذر تحميل الحسابات المسجلة.",
+    roles: { admin: "مشرف", instructor: "مدرّب", student: "طالب", parent: "ولي أمر" }
   },
   en: {
     title: "Platform administration", eyebrow: "Secure academic operations", intro: "A working space for authorized supervisors. Student records stay hidden until the server confirms an authenticated session.",
@@ -57,8 +69,12 @@ const copy = {
     search: "Search name, email, or course", name: "Student", course: "Course", progress: "Progress", attendance: "Attendance", score: "Quiz average", status: "Status",
     empty: "There are no student records to display.", statsError: "Could not load platform statistics.", studentsError: "Could not load the student roster.",
     studentsCount: "Estimated learners", coursesCount: "Available courses", languages: "Interface languages", experience: "Years of experience",
-    roleNotice: "Role switching here is for preview only and does not grant server permissions.", retry: "Try again", show: "Show password", hide: "Hide password",
-    loading: "Loading student records…", noMatch: "No matching records."
+    roleNotice: "Public sign-ups create student accounts only. The system engineer grants administrator access; administrators can manage team roles from the accounts list.", retry: "Try again", show: "Show password", hide: "Hide password",
+    loading: "Loading student records…", noMatch: "No matching records.",
+    accounts: "Accounts & permissions", accountIntro: "Real registered accounts. The system engineer and administrators can manage team permissions here.",
+    role: "Role", created: "Joined", roleSaved: "Role updated.", roleError: "Could not update the role.", accountEmpty: "No registered accounts yet.",
+    accountsError: "Could not load registered accounts.",
+    roles: { admin: "Administrator", instructor: "Instructor", student: "Student", parent: "Parent" }
   }
 } as const;
 
@@ -69,7 +85,7 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [active, setActive] = useState<"overview" | "students" | "parent" | "announcements">("overview");
+  const [active, setActive] = useState<"overview" | "students" | "accounts" | "parent" | "announcements">("overview");
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [statsError, setStatsError] = useState(false);
   const [parentReport, setParentReport] = useState<ParentReport | null>(null);
@@ -80,6 +96,10 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
   const [studentsRefresh, setStudentsRefresh] = useState(0);
   const [statsRefresh, setStatsRefresh] = useState(0);
   const [parentRefresh, setParentRefresh] = useState(0);
+  const [accounts, setAccounts] = useState<ManagedAccount[]>([]);
+  const [accountsState, setAccountsState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [accountsRefresh, setAccountsRefresh] = useState(0);
+  const [updatingAccountId, setUpdatingAccountId] = useState<string | null>(null);
 
   const verifySession = async () => {
     setAuth("checking");
@@ -87,8 +107,11 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
     try {
       const response = await fetch(appPath("/api/admin/session"), { credentials: "include" });
       if (!response.ok) throw new Error("session");
-      const data = await response.json() as { authenticated: boolean };
-      onRoleSwitch(data.authenticated ? "admin" : "student");
+      const data = await response.json() as {
+        authenticated: boolean;
+        user?: { id: string; name: string; email: string; role: Role };
+      };
+      onRoleSwitch(data.authenticated ? "admin" : "student", data.user);
       setAuth(data.authenticated ? "authenticated" : "locked");
     } catch {
       setAuth("error");
@@ -169,6 +192,30 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
     return () => controller.abort();
   }, [auth, parentRefresh]);
 
+  useEffect(() => {
+    if (auth !== "authenticated" || active !== "accounts") return;
+    const controller = new AbortController();
+    setAccountsState("loading");
+    fetch(appPath("/api/admin/users"), {
+      credentials: "include",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("accounts");
+        return (await response.json()) as ManagedAccount[];
+      })
+      .then((data) => {
+        if (!controller.signal.aborted) {
+          setAccounts(Array.isArray(data) ? data : []);
+          setAccountsState("ready");
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setAccountsState("error");
+      });
+    return () => controller.abort();
+  }, [auth, active, accountsRefresh]);
+
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!password.trim() || busy) return;
@@ -182,9 +229,12 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
         body: JSON.stringify({ password })
       });
       if (!response.ok) throw new Error("login");
-      const data = await response.json() as { authenticated: boolean };
+      const data = await response.json() as {
+        authenticated: boolean;
+        user?: { id: string; name: string; email: string; role: Role };
+      };
       if (!data.authenticated) throw new Error("login");
-      onRoleSwitch("admin");
+      onRoleSwitch("admin", data.user);
       setPassword("");
       setAuth("authenticated");
     } catch {
@@ -205,6 +255,27 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
       if (!response.ok) await verifySession();
     } catch {
       await verifySession();
+    }
+  };
+  const handleAccountRoleChange = async (accountId: string, role: Role) => {
+    setUpdatingAccountId(accountId);
+    try {
+      const response = await fetch(appPath(`/api/admin/users/${encodeURIComponent(accountId)}/role`), {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!response.ok) throw new Error("role_update");
+      const data = (await response.json()) as { user: ManagedAccount };
+      setAccounts((existing) => existing.map((account) =>
+        account.id === accountId ? { ...account, ...data.user } : account
+      ));
+      setMessage(t.roleSaved);
+    } catch {
+      setMessage(t.roleError);
+    } finally {
+      setUpdatingAccountId(null);
     }
   };
   const filteredStudents = students.filter((student) =>
@@ -261,9 +332,9 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
         </button>
       </header>
       <div className="flex flex-wrap gap-2 border-b border-[#d8ded6]" role="tablist" aria-label={t.title}>
-        {(["overview", "students", "parent", "announcements"] as const).map((tab) => (
+        {(["overview", "students", "accounts", "parent", "announcements"] as const).map((tab) => (
           <button key={tab} role="tab" aria-selected={active === tab} onClick={() => setActive(tab)} className={`border-b-2 px-4 py-3 text-sm font-semibold transition ${active === tab ? "border-[#347b70] text-[#285e53]" : "border-transparent text-[#77847e] hover:text-[#304c43]"}`}>
-            {tab === "overview" ? t.overview : tab === "students" ? t.students : tab === "parent" ? (language === "ar" ? "تقارير أولياء الأمور" : "Parent reports") : (language === "ar" ? "الإعلانات" : "Announcements")}
+            {tab === "overview" ? t.overview : tab === "students" ? t.students : tab === "accounts" ? t.accounts : tab === "parent" ? (language === "ar" ? "تقارير أولياء الأمور" : "Parent reports") : (language === "ar" ? "الإعلانات" : "Announcements")}
           </button>
         ))}
       </div>
@@ -300,6 +371,66 @@ export function AdminPanel({ onRoleSwitch, language }: AdminPanelProps) {
                   <tbody className="divide-y divide-[#eceee8]">{filteredStudents.map((student) => <tr key={student.id} className="hover:bg-[#fbfaf6]"><td className="px-4 py-4"><div className="font-semibold text-[#243d34]">{student.name}</div><div className="mt-1 font-mono text-xs text-[#829087]" dir="ltr">{student.email}</div></td><td className="px-4 py-4 text-[#4e6e62]">{student.course}</td><td className="px-4 py-4 font-mono">{student.progress}%</td><td className="px-4 py-4 font-mono">{student.attendance}%</td><td className="px-4 py-4 font-mono">{student.quizAvg}%</td><td className="px-4 py-4">{student.status}</td></tr>)}</tbody>
                 </table></div>}
         </div>
+      )}
+      {active === "accounts" && (
+        <section className="overflow-hidden rounded-2xl border border-[#dce1d9] bg-[#fffefa]">
+          <header className="border-b border-[#e7e9e3] p-5">
+            <h2 className="text-lg font-bold text-[#203b33]">{t.accounts}</h2>
+            <p className="mt-1 text-xs leading-6 text-[#728078]">{t.accountIntro}</p>
+            {message && <p role="status" className="mt-3 text-sm text-[#347b70]">{message}</p>}
+          </header>
+          {accountsState === "loading" ? (
+            <p className="p-6 text-sm text-[#718078]" role="status">{t.loading}</p>
+          ) : accountsState === "error" ? (
+            <div className="flex items-center gap-3 p-6 text-sm text-rose-800" role="alert">
+              <AlertCircle size={18} />{t.accountsError}
+              <button type="button" onClick={() => setAccountsRefresh((value) => value + 1)} className="ms-auto underline">{t.retry}</button>
+            </div>
+          ) : accounts.length === 0 ? (
+            <p className="px-6 py-14 text-center text-sm text-[#718078]">{t.accountEmpty}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] text-start text-sm">
+                <thead className="bg-[#f3f4ee] text-xs text-[#65766e]">
+                  <tr>
+                    {[t.name, t.role, t.created].map((heading) => <th key={heading} className="px-4 py-3 text-start font-semibold">{heading}</th>)}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#eceee8]">
+                  {accounts.map((account) => (
+                    <tr key={account.id} className="hover:bg-[#fbfaf6]">
+                      <td className="px-4 py-4">
+                        <div className="font-semibold text-[#243d34]">{account.name}</div>
+                        <div className="mt-1 font-mono text-xs text-[#829087]" dir="ltr">{account.email}</div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <select
+                          aria-label={`${t.role}: ${account.name}`}
+                          className="min-w-36 rounded-lg border border-[#d9ded6] bg-[#fbfaf6] px-3 py-2 text-sm"
+                          disabled={updatingAccountId === account.id}
+                          onChange={(event) => void handleAccountRoleChange(account.id, event.target.value as Role)}
+                          value={account.role}
+                        >
+                          {(currentUser.id === "root-admin" || account.role === "admin"
+                            ? (["student", "instructor", "parent", "admin"] as Role[])
+                            : (["student", "instructor", "parent"] as Role[])
+                          ).map((role) => (
+                            <option key={role} value={role} disabled={role === "admin" && currentUser.id !== "root-admin"}>
+                              {t.roles[role]}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-4 text-[#4e6e62]">
+                        {account.createdAt ? new Date(account.createdAt).toLocaleDateString(language === "ar" ? "ar-SA" : "en-US") : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       )}
       {active === "parent" && (
         <div className="rounded-2xl border border-[#dce1d9] bg-[#fffefa] p-6 sm:p-8">

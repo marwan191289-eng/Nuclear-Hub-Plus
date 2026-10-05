@@ -12,12 +12,12 @@ export function CoursesSection({ courses, onEnroll, language }: CoursesSectionPr
   const isEn = language === "en";
 
   return (
-    <section className="py-16 px-6 lg:px-10 max-w-[1240px] mx-auto space-y-12">
+    <section className="py-16 px-6 lg:px-10 max-w-[1240px] mx-auto space-y-10">
       {/* Section Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-800 pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold mb-2">
-            <span className="size-2 rounded-full bg-cyan-400 pulse-dot" />
+          <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold mb-3">
+            <span className="size-2 rounded-full bg-cyan-400" />
             <span>{isEn ? "ACADEMIC PROGRAMS & COURSES" : "البرامج والدورات الأكاديمية التخصصية"}</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-white">
@@ -30,24 +30,31 @@ export function CoursesSection({ courses, onEnroll, language }: CoursesSectionPr
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-            <span className="text-emerald-400 font-bold">{isEn ? "Registration details" : "تفاصيل التسجيل"}</span>
-            <span>{isEn ? "• Program information" : "• معلومات البرامج"}</span>
+        <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-xs text-slate-400">
+            <span className="block font-semibold text-emerald-400">{isEn ? "Clear program information" : "معلومات أكاديمية واضحة"}</span>
+            <span className="mt-1 block">{isEn ? "Syllabus, duration and tuition shown before enrolment." : "المحاور والمدة والرسوم موضحة قبل التسجيل."}</span>
         </div>
       </div>
 
       {/* Courses Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {courses.length === 0 ? (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 px-6 py-14 text-center">
+          <h3 className="text-lg font-bold text-white">{isEn ? "Courses are being prepared" : "يجري إعداد المقررات"}</h3>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-400">
+            {isEn ? "Please check back soon for the available academic programs." : "يرجى العودة قريباً للاطلاع على البرامج الأكاديمية المتاحة."}
+          </p>
+        </div>
+      ) : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-7" aria-label={isEn ? "Available courses" : "المقررات المتاحة"}>
         {courses.map((course) => (
           <div
             key={course.id}
-            className="group relative rounded-3xl border border-slate-800 bg-[#080d1a] overflow-hidden flex flex-col justify-between transition-all duration-300 hover:border-cyan-500/50 hover:shadow-[0_0_50px_rgba(0,240,255,0.18)]"
+            className="group relative rounded-2xl border border-slate-800 bg-[#080d1a] overflow-hidden flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/50 hover:shadow-[0_0_50px_rgba(0,240,255,0.18)]"
           >
             {/* Course Artwork */}
             <div className="relative aspect-[16/10] overflow-hidden bg-black">
               <img
                 src={course.image}
-                alt={course.title}
+                alt={isEn ? course.titleEn : course.title}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#080d1a] via-transparent to-transparent opacity-90" />
@@ -64,7 +71,7 @@ export function CoursesSection({ courses, onEnroll, language }: CoursesSectionPr
             </div>
 
             {/* Content Body */}
-            <div className="p-6 flex-1 flex flex-col justify-between space-y-5">
+            <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs text-slate-400">
                   <span className="flex items-center gap-1">
@@ -118,7 +125,7 @@ export function CoursesSection({ courses, onEnroll, language }: CoursesSectionPr
             </div>
           </div>
         ))}
-      </div>
+      </div>}
     </section>
   );
 }

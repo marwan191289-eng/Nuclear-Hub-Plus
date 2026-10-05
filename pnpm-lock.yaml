@@ -409,6 +409,9 @@ importers:
       '@google/genai':
         specifier: ^2.4.0
         version: 2.4.0
+      '@workspace/db':
+        specifier: workspace:*
+        version: link:../../lib/db
       dotenv:
         specifier: ^16.4.5
         version: 16.4.5

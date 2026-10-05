@@ -1,29 +1,28 @@
-import React, { useState } from "react";
-import { Role, UserProfile } from "../types";
+import React, { useEffect, useState } from "react";
+import { UserProfile } from "../types";
 import {
-  Atom,
   Bell,
   Globe,
   Wifi,
   WifiOff,
   User,
-  Shield,
-  GraduationCap,
-  Users,
-  Award,
-  BookOpen,
-  Calendar,
+  LogOut,
   Sparkles,
   Menu,
   X,
   Lock,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { appPath } from "../lib/app-path";
 
 interface NavbarProps {
   currentTab: string;
   onTabChange: (tab: string) => void;
   currentUser: UserProfile;
-  onRoleChange: (role: Role) => void;
+  isAuthenticated: boolean;
+  onOpenAuth: () => void;
+  onSignOut: () => void;
   language: "ar" | "en";
   onLanguageToggle: () => void;
   isOnline: boolean;
@@ -36,7 +35,9 @@ export function Navbar({
   currentTab,
   onTabChange,
   currentUser,
-  onRoleChange,
+  isAuthenticated,
+  onOpenAuth,
+  onSignOut,
   language,
   onLanguageToggle,
   isOnline,
@@ -45,15 +46,24 @@ export function Navbar({
   onOpenNotifications,
 }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    try {
+      return localStorage.getItem("nuclear_hub_theme") === "dark" ? "dark" : "light";
+    } catch {
+      return "light";
+    }
+  });
   const isEn = language === "en";
 
-  const roleLabels: Record<Role, { ar: string; en: string; icon: React.ReactNode }> = {
-    admin: { ar: "المهندس محمود (المدير العام)", en: "Eng. Mahmoud (Super Admin)", icon: <Shield className="size-3.5 text-pink-400" /> },
-    instructor: { ar: "معلم مساعد / مدرب", en: "Assistant Instructor", icon: <Award className="size-3.5 text-cyan-400" /> },
-    student: { ar: "طالب أكاديمي", en: "Enrolled Student", icon: <GraduationCap className="size-3.5 text-emerald-400" /> },
-    parent: { ar: "بوابة ولي الأمر", en: "Parent Portal", icon: <Users className="size-3.5 text-amber-400" /> },
-  };
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    try {
+      localStorage.setItem("nuclear_hub_theme", theme);
+    } catch {
+      // Theme remains available for the current session when storage is unavailable.
+    }
+  }, [theme]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-cyan-500/20 bg-[#030612]/85 backdrop-blur-2xl shadow-[0_12px_45px_-12px_rgba(0,0,0,0.9),0_1px_0_0_rgba(0,240,255,0.15)] transition-all">
@@ -65,23 +75,13 @@ export function Navbar({
           className="flex items-center gap-3.5 text-start group"
           onClick={() => onTabChange("home")}
         >
-          <div className="relative flex items-center justify-center size-11 rounded-2xl bg-gradient-to-br from-cyan-950/90 via-[#071328] to-[#02050e] border border-cyan-400/50 shadow-[0_0_25px_rgba(0,240,255,0.4)] transition-all duration-300 group-hover:scale-105 group-hover:border-cyan-300 group-hover:shadow-[0_0_35px_rgba(0,240,255,0.7)]">
-            <Atom className="size-6 text-[#477f72] transition-transform group-hover:rotate-12" />
-            <span className="absolute inset-0 rounded-2xl bg-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <div>
-            <div className="font-extrabold text-sm sm:text-base tracking-tight text-white flex items-center gap-2">
-              <span className="group-hover:text-cyan-300 transition-colors">
-                {isEn ? "Eng. Mahmoud Shaltoot" : "المهندس محمود شلتوت"}
-              </span>
-              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-widest bg-gradient-to-r from-cyan-950/90 to-blue-950/90 text-cyan-300 border border-cyan-400/50 shadow-[0_0_12px_rgba(0,240,255,0.25)]">
-                NUCLEAR
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium">
-              {isEn ? "Nuclear Chemistry & Reactor Hub" : "منصة الكيمياء النووية والمفاعلات"}
-            </div>
-          </div>
+          <img
+            src={appPath("/logo.svg")}
+            alt={isEn ? "Nuclear Knowledge Hub" : "مركز المعرفة النووية"}
+            width="340"
+            height="76"
+            className="h-10 w-auto max-w-[min(58vw,220px)] object-contain transition-opacity group-hover:opacity-90 sm:h-12"
+          />
         </button>
 
         {/* Desktop Navigation Links in a Luxury Segmented Floating Dock */}
@@ -181,47 +181,36 @@ export function Navbar({
             <span className="hidden sm:inline font-bold">{isOnline ? (isEn ? "Synced" : "مُزامن") : (isEn ? "Offline" : "محلي")}</span>
           </div>
 
-          {/* Quick Role Switcher Dropdown - Refined Metallic Capsule */}
-          <div className="relative">
+          {isAuthenticated ? (
             <button
-              onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-              className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-gradient-to-b from-slate-800/80 to-slate-900/90 px-3.5 py-1.5 text-xs text-slate-100 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all cursor-pointer shadow-sm active:scale-95"
-              title="تبديل الصلاحيات والأدوار للمعاينة الفورية"
+              type="button"
+              onClick={() => onTabChange(currentUser.role === "admin" ? "admin" : "portal")}
+              className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/90 px-3 py-1.5 text-xs text-slate-100 transition-all hover:border-cyan-400"
+              aria-label={isEn ? `Open ${currentUser.name}'s account` : `فتح حساب ${currentUser.name}`}
             >
-              {roleLabels[currentUser.role].icon}
-              <span className="hidden md:inline font-bold">
-                {isEn ? roleLabels[currentUser.role].en.split(" ")[0] : roleLabels[currentUser.role].ar.split(" ")[0]}
-              </span>
+              <User className="size-3.5 text-cyan-400" />
+              <span className="hidden max-w-28 truncate font-bold md:inline">{currentUser.name}</span>
             </button>
-
-            {roleMenuOpen && (
-              <div
-                className="absolute start-0 sm:start-auto sm:end-0 mt-2.5 w-60 rounded-2xl border border-slate-700/90 bg-[#090f20]/95 p-2 shadow-[0_15px_50px_rgba(0,0,0,0.9)] z-50 backdrop-blur-xl animate-in fade-in zoom-in-95"
-                onMouseLeave={() => setRoleMenuOpen(false)}
-              >
-                <div className="px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider text-slate-400 border-b border-slate-800">
-                  {isEn ? "Select Role & Permissions" : "اختر الدور والصلاحيات"}
-                </div>
-                {(["admin", "instructor", "student", "parent"] as Role[]).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => {
-                      onRoleChange(r);
-                      setRoleMenuOpen(false);
-                      if (r === "admin") onTabChange("admin");
-                      if (r === "student") onTabChange("portal");
-                    }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-start transition-all cursor-pointer ${
-                      currentUser.role === r ? "bg-cyan-500/20 text-[#00f0ff] font-bold border border-cyan-500/30" : "text-slate-300 hover:bg-slate-800/60"
-                    }`}
-                  >
-                    {roleLabels[r].icon}
-                    <span>{isEn ? roleLabels[r].en : roleLabels[r].ar}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="rounded-xl border border-slate-700/80 bg-slate-900/90 p-2 text-slate-300 transition hover:border-rose-400/50 hover:text-rose-700"
+              aria-label={isEn ? "Sign out" : "تسجيل الخروج"}
+              title={isEn ? "Sign out" : "تسجيل الخروج"}
+            >
+              <LogOut className="size-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onOpenAuth}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-900/20 px-3 py-2 text-xs font-bold text-cyan-100 transition hover:border-cyan-300 hover:bg-cyan-900/30"
+              data-testid="button-open-auth"
+            >
+              <User className="size-3.5" />
+              {isEn ? "Sign in / Join" : "دخول / إنشاء حساب"}
+            </button>
+          )}
 
           {/* Language Toggle */}
           <button
@@ -231,6 +220,19 @@ export function Navbar({
           >
             <Globe className="size-3.5 text-cyan-400" />
             <span className="font-mono font-bold uppercase">{isEn ? "عربي" : "EN"}</span>
+          </button>
+
+          {/* Persisted appearance preference */}
+          <button
+            type="button"
+            onClick={() => setTheme((current) => current === "light" ? "dark" : "light")}
+            aria-label={theme === "light" ? (isEn ? "Switch to dark theme" : "التبديل إلى المظهر الداكن") : (isEn ? "Switch to light theme" : "التبديل إلى المظهر الفاتح")}
+            aria-pressed={theme === "dark"}
+            title={theme === "light" ? (isEn ? "Dark theme" : "المظهر الداكن") : (isEn ? "Light theme" : "المظهر الفاتح")}
+            className="flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-900/90 px-2.5 py-1.5 text-xs text-slate-200 transition-all hover:border-cyan-400/60 hover:text-cyan-300 cursor-pointer"
+          >
+            {theme === "light" ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
+            <span className="hidden lg:inline">{theme === "light" ? (isEn ? "Dark" : "داكن") : (isEn ? "Light" : "فاتح")}</span>
           </button>
 
           {/* Notifications Bell */}
@@ -304,10 +306,14 @@ export function Navbar({
             {isEn ? "Eng. Mahmoud Page" : "صفحة المهندس محمود"}
           </button>
           <button
-            onClick={() => { onTabChange("portal"); setMobileMenuOpen(false); }}
+            onClick={() => {
+              if (isAuthenticated) onTabChange("portal");
+              else onOpenAuth();
+              setMobileMenuOpen(false);
+            }}
             className="block w-full text-start py-2 text-sm font-medium text-slate-200"
           >
-            {isEn ? "Student Portal & Lessons" : "بوابة الطالب والدروس"}
+            {isEn ? (isAuthenticated ? "Student Portal & Lessons" : "Sign in or create an account") : (isAuthenticated ? "بوابة الطالب والدروس" : "تسجيل الدخول أو إنشاء حساب")}
           </button>
           <button
             onClick={() => { onTabChange("booking"); setMobileMenuOpen(false); }}

@@ -1,13 +1,13 @@
 {
   "name": "Nuclear Knowledge Hub | مركز المعرفة النووية",
   "short_name": "Nuclear Hub",
-  "description": "دورات الكيمياء النووية مع المهندس محمود إسماعيل شلتوت",
+  "description": "منصة عربية وإنجليزية لتعلم الكيمياء النووية وهندسة المفاعلات والسلامة الإشعاعية",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#080b11",
-  "theme_color": "#080b11",
+  "background_color": "#f2f3ee",
+  "theme_color": "#233a31",
   "icons": [
     {
       "src": "/favicon.svg",
